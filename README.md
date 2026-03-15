@@ -2,26 +2,27 @@
 
 Display an IMDb episodes ratings heatmap grid on Jellyfin TV Series pages.
 
-Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Series pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
+Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
 
 ## Features
 
-- Displays an IMDb episode ratings heatmap grid on Jellyfin series pages
-- Uses a heatmap-style ratings chart / graph for quick visual reading
-- Rating-based color styling to make strong and weak episodes easy to identify at a glance.
-- Drop-down menu to avoid spoilers before opening the ratings grid
-- Highlights the matching season number and episode number when hovering a rating cell
+- Uses a **heatmap-style** ratings chart
+- Rating based color styling to make strong and weak episodes easy to identify at a glance
+- **Drop-down menu to avoid spoilers** at opening the TV series pages
+- Highlights the matching season number and episode number when hovering a cell
+- **Compact layout**, display up to 24 episodes and 20 seasons without scrolling on desktop
+- **Mobile-friendly** layout with horizontal scroll support
+- Sticky episode number column during horizontal scrolling
 - Click any episode rating cell to open the corresponding IMDb episode page
 - Click any season header to open the corresponding IMDb season page
-- Mobile-friendly layout with horizontal scroll support
-- Sticky episode number column during horizontal scrolling
-- Compact layout, up to 24 episodes and 20 seasons view without scrolling on desktop
+- The grid links to IMDb pages instead of Jellyfin pages because IMDb and your library (TMDB) may have inconsistent numbering.
 - Fallback link to the IMDb ratings page when heatmap data is not available
-- Heatmap data is loaded only after clicking the drop-down menu
+- Heatmap data are loaded only after clicking the drop-down menu
 
 ## Transparency
+
 - This repository contains a suspicious amount of LLM code.
-- Human supervision was required to optimize the result, despite JavaScript repeatedly trying to hurt the human.
+- Human involvement was required to optimize the process, despite JavaScript repeatedly trying to hurt the human.
 
 ## Requirements
 
@@ -31,23 +32,15 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Series
 
 ## Installation
 
-### 1. Install the Jellyfin JavaScript Injector plugin
-
-Install the **Jellyfin JavaScript Injector** plugin in your Jellyfin server if it is not already installed.
+### 1. Install the **Jellyfin JavaScript Injector** plugin in your Jellyfin server if it is not already installed (may need server reboot).
 
 ### 2. Open the Jellyfin admin dashboard
 
-Go to:
+### 3. Go to: **Dashboard => JS Injector**
 
-**Dashboard -> JS Injector**
+### 4. Create a new injected script
 
-### 3. Create a new injected script
-
-Paste the full script into the JavaScript field.
-
-### 4. Save
-
-Save the configuration.
+Add Script => Name it imdb-grid or whatever => Paste the full script into the new field => Click Enabled => Click **Save**
 
 ### 5. Reload Jellyfin web
 
@@ -56,7 +49,8 @@ Refresh the Jellyfin web interface and open a TV series page.
 You should see an **IMDb Episodes Grid** drop-down section on supported series pages.
 
 ## Technical
-- Injects the grid directly into Jellyfin with the Jellyfin JavaScript Injector plugin
+
+- Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
 - DOM insertion in a stable location on series page (between Seasons and cast)
 - Because Jellyfin may keep hidden old pages in the DOM, the script always tries to target the currently visible details view
 - Data source : The heatmap data is loaded from the IMDb heatmap dataset by @mokronos
