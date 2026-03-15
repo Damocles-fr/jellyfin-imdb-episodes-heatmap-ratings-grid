@@ -1,4 +1,4 @@
-# ⸽⸽⸽⸽⸽⸽ Jellyfin Episodes Heatmap Grid 🟧🟨🟩🟩
+# ⸽⸽⸽⸽⸽⸽ Jellyfin Episodes Ratings Grid 🟧🟨🟩🟩
 
 Display an IMDb episodes ratings heatmap grid on Jellyfin Web TV Series pages.
 
