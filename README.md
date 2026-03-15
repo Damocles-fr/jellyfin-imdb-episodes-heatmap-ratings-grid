@@ -1,6 +1,6 @@
 # ⸽⸽⸽⸽⸽⸽ Jellyfin Episodes Ratings Grid 🟧🟨🟩🟩
 
-Display an IMDb episodes ratings heatmap grid on Jellyfin Web Series pages.
+Display an IMDb episodes ratings heatmap grid on Jellyfin TV Series pages.
 
 Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
 
