@@ -6,7 +6,7 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 
 ## Features
 
-- Uses a **heatmap-style** ratings chart
+- Uses a **heatmap-style** graph ratings chart
 - Rating based color styling to make strong and weak episodes easy to identify at a glance
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
 - Highlights the matching season number and episode number when hovering a cell
