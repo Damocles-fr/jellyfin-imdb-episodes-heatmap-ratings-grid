@@ -32,21 +32,19 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 
 ## Installation
 
-### 1. Install the **Jellyfin JavaScript Injector** plugin in your Jellyfin server if it is not already installed (may need server reboot).
+#### 1. Install the *Jellyfin JavaScript Injector* plugin in your Jellyfin server if it is not already installed (may need server reboot).
 
-### 2. Open the Jellyfin admin dashboard
+#### 2. Open the Jellyfin admin ***dashboard***
 
-### 3. Go to: **Dashboard => JS Injector**
+#### 3. Go to: ***Dashboard*** => ***JS Injector***
 
-### 4. Create a new injected script
+#### 4. Create a new injected script
 
-Add Script => Name it imdb-grid or whatever => Paste the full script into the new field => Click Enabled => Click **Save**
+***Add Script*** => Name it *imdb-grid* or whatever => Paste the full script into the new field => Click ***Enabled*** => Click ***Save***
 
-### 5. Reload Jellyfin web
+#### 5. Refresh the Jellyfin web interface and open a TV series page.
 
-Refresh the Jellyfin web interface and open a TV series page.
-
-You should see an **IMDb Episodes Grid** drop-down section on supported series pages.
+You should see an **IMDb Episodes Grid** drop-down section on series pages.
 
 ## Technical
 
