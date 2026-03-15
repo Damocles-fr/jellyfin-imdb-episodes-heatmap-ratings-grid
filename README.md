@@ -40,7 +40,7 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 
 #### 4. Create a new injected script
 
-***Add Script*** => Name it *imdb-grid* or whatever => Paste the full script into the new field => Click ***Enabled*** => Click ***Save***
+***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the full ***.js*** script into the new field => Click ***Enabled*** => Click ***Save***
 
 #### 5. Refresh the Jellyfin web interface and open a TV series page.
 
