@@ -10,7 +10,7 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 - Rating based color styling to make strong and weak episodes easy to identify at a glance
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
 - Highlights the matching season number and episode number when hovering a cell
-- **Compact layout**, display up to 24 episodes and 20 seasons without scrolling on desktop
+- **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** layout with horizontal scroll support
 - Sticky episode number column during horizontal scrolling
 - Click any episode rating cell to open the corresponding IMDb episode page
