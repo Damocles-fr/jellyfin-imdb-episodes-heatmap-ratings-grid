@@ -24,7 +24,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Transparency
 
-- This repository contains a suspicious amount of LLM code.
+- Heavily LLM-assisted
 - Human involvement was required to optimize the process, despite JavaScript repeatedly trying to hurt the human.
 
 ## Requirements
@@ -80,7 +80,6 @@ You should see an **IMDb Episodes Grid** drop-down section on series pages.
 - If the dataset exists, the script builds the full ratings grid
 - If the dataset is missing, the script shows a fallback link to the IMDb ratings page for that series
 - Cached requests for item metadata and external ratings dataset to reduce repeated loading
-- Heavily LLM-assisted
 
 ## Need Help?
 - Don't hesitate to open an [issue](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/issues)
