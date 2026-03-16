@@ -3,7 +3,7 @@
 Display an IMDb episodes ratings heatmap grid on Jellyfin TV Series pages.
 The script adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
 
-It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector
+It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector.
 
 ## Features
 
