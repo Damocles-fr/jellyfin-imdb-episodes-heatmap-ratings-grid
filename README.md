@@ -86,7 +86,7 @@ You should see an **IMDb Episodes Grid** drop-down section on series pages.
 - If the dataset exists, the script builds the full ratings grid
 - If the dataset is missing, the script shows a fallback link to the IMDb ratings page for that series
 - Cached requests for item metadata and external ratings dataset to reduce repeated loading
-- Heavily LLM-assisted : the script includes: visible-page detection / delayed retries while the details page is still rendering / mutation-based reattachment / cleanup of blocks from previously viewed series / watchdog checks for cases where Jellyfin re-renders the page structure
+- Heavily LLM-assisted
 
 ## Need Help?
 - Don't hesitate to open an [issue](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/issues)
