@@ -1,9 +1,7 @@
 # Jellyfin Episodes Ratings Grid 🟧🟨🟩🟩
 
 Display an IMDb episodes ratings heatmap grid on Jellyfin TV Series pages.
-The script adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
-
-It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector.
+The userscript adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
 
 <p align="center">
   <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-1_resultat.webp" alt="Android view" width="320"><br>
@@ -18,7 +16,7 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** layout with horizontal scroll support
 - Sticky episode number column during horizontal scrolling
-- Episodes and seasons are linked to the library. If it fails to find the episode, it opens to the season.
+- Episodes and seasons are **linked to the library**. If it fails to find the episode, it opens to the season.
 - If that also fails, it falls back to opening the corresponding IMDb page.
 - IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
 - Display a simple link to the IMDb ratings page when heatmap data is not available
@@ -74,6 +72,7 @@ You should see an **IMDb Episodes Grid** drop-down section on series pages.
 
 ## Technical
 
+- It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector.
 - Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
 - DOM insertion in a stable location on series page (between Seasons and cast)
 - Data source : The heatmap data is loaded from the IMDb heatmap dataset by @mokronos
