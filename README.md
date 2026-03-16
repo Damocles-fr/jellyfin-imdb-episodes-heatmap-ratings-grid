@@ -75,10 +75,9 @@ You should see an **IMDb Episodes Grid** drop-down section on series pages.
 
 ## Technical
 
-- Works with Jellyfin Web & JavaScript Injector. It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI.
+- It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector
 - Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
 - DOM insertion in a stable location on series page (between Seasons and cast)
-- Because Jellyfin may keep hidden old pages in the DOM, the script always tries to target the currently visible details view
 - Data source : The heatmap data is loaded from the IMDb heatmap dataset by @mokronos
 - Heatmap data is loaded only after clicking the drop-down menu
 - When a supported series page is detected, the script requests the current Jellyfin item metadata through the local Jellyfin API and reads the **IMDb provider ID** from the item's `ProviderIds`.
