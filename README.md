@@ -65,7 +65,7 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 
 #### 4. Create a new injected script
 
-***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the full [.js script](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases) into the new field => Click ***Enabled*** => Click ***Save***
+***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the full [.js script you choose](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases) into the new field => Click ***Enabled*** => Click ***Save***
 
 #### 5. Refresh the Jellyfin web interface and open a TV series page.
 
