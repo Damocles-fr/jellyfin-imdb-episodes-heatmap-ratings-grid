@@ -57,6 +57,7 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 <p align="center">
   <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-5-android.webp" alt="Android view" width="320">
 </p>
+
 **Mobile-friendly**
 
 
