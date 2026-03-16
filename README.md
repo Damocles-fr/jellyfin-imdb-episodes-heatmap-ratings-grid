@@ -5,6 +5,10 @@ The script adds the grid to TV Shows pages between Seasons and Cast, inside a dr
 
 It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector.
 
+<p align="center">
+  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-1_resultat.webp" alt="Android view" width="320"><br>
+</p>
+
 ## Features
 
 - Uses a **heatmap-style** graph ratings chart
@@ -19,11 +23,6 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 - IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
 - Display a simple link to the IMDb ratings page when heatmap data is not available
 - Heatmap data are loaded only after clicking the drop-down menu
-
-
-<p align="center">
-  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-1_resultat.webp" alt="Android view" width="320"><br>
-</p>
 
 ## Transparency
 
