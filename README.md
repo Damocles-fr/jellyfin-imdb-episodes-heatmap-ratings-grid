@@ -19,6 +19,11 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 - Fallback link to the IMDb ratings page when heatmap data is not available
 - Heatmap data are loaded only after clicking the drop-down menu
 
+
+<p align="center">
+  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-1_resultat.webp" alt="Android view" width="320"><br>
+</p>
+
 ## Transparency
 
 - This repository contains a suspicious amount of LLM code.
@@ -29,6 +34,22 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 - Jellyfin
 - [Jellyfin JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector)
 - A Jellyfin library with series that have IMDb provider IDs
+
+## Screenshots
+
+
+**Drop-down menu**
+![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
+
+
+**Sticky column & Highlights**
+![Many seasons scroll](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-2-manyseasonsscroll_resultat.webp)
+
+
+**Mobile-friendly**
+<p align="center">
+  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-5-android.webp" alt="Android view" width="320">
+</p>
 
 ## Installation
 
