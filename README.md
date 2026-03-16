@@ -92,7 +92,3 @@ You should see an **IMDb Episodes Grid** drop-down section on series pages.
 - Don't hesitate to open an [issue](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/issues)
 - **DM me** https://forum.jellyfin.org/u-damocles
 - GitHub [**Damocles-fr**](https://github.com/Damocles-fr)
-
-## License
-
-MIT
