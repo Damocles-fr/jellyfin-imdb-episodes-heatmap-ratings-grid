@@ -29,9 +29,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Requirements
 
-- Jellyfin
 - [Jellyfin JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector)
-- A Jellyfin library with series that have IMDb provider IDs
 
 ## Screenshots
 
