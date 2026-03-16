@@ -39,14 +39,17 @@ Using Jellyfin JavaScript Injector plugin, the script adds the grid to TV Shows 
 
 
 **Drop-down menu**
+
 ![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
 
 
 **Sticky column & Highlights**
+
 ![Many seasons scroll](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-2-manyseasonsscroll_resultat.webp)
 
 
 **Mobile-friendly**
+
 <p align="center">
   <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-5-android.webp" alt="Android view" width="320">
 </p>
