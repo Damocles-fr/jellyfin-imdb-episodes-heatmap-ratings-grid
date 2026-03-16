@@ -14,8 +14,8 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** layout with horizontal scroll support
 - Sticky episode number column during horizontal scrolling
-- Click any episode rating cell to open the corresponding IMDb episode page
-- Click any season header to open the corresponding IMDb season page
+- Episodes and seasons are linked to the library. If it fails to find the episode, it falls back to the season. If that also fails, it opens the corresponding IMDb page.
+- IMDb website links–only version also available.
 - The grid links to IMDb pages instead of Jellyfin pages because IMDb and your library (TMDB) may have inconsistent numbering.
 - Fallback link to the IMDb ratings page when heatmap data is not available
 - Heatmap data are loaded only after clicking the drop-down menu
