@@ -16,7 +16,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** layout with horizontal scroll support
 - Sticky episode number column during horizontal scrolling
-- Episodes and seasons are **linked to the library**. If it fails to find the episode, it opens to the season.
+- **Fast access** : Episodes and seasons cells are **linked to the library**. If it fails to find the episode, it opens to the season.
 - If that also fails, it falls back to opening the corresponding IMDb page.
 - IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
 - Display a simple link to the IMDb ratings page when heatmap data is not available
