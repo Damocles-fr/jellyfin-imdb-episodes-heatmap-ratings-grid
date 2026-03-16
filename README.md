@@ -17,7 +17,7 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 - Episodes and seasons are linked to the library. If it fails to find the episode, it opens to the season.
 - If that also fails, it falls back to opening the corresponding IMDb page.
 - IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
-- Display a link to the IMDb ratings page when heatmap data is not available
+- Display a simple link to the IMDb ratings page when heatmap data is not available
 - Heatmap data are loaded only after clicking the drop-down menu
 
 
