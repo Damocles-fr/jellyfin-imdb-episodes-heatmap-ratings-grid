@@ -38,29 +38,22 @@ It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & Ja
 
 ## Screenshots
 
-
-
-
-
 ![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
 **Drop-down menu**
 
-
-
+<br>
 
 ![Many seasons scroll](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-2-manyseasonsscroll_resultat.webp)
 **Sticky column & Highlights**
 
-
-
+<br>
 
 <p align="center">
-  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-5-android.webp" alt="Android view" width="320">
+  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-5-android.webp" alt="Android view" width="320"><br>
+  <strong>Mobile-friendly</strong>
 </p>
 
-**Mobile-friendly**
-
-
+<br>
 
 ## Installation
 
