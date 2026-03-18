@@ -67,7 +67,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ```
 (() => {
   const s = document.createElement("script");
-  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/Jellyfin-Episodes-Ratings-Grid-JF-Library-Links.js";
+  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid@latest/Jellyfin-Episodes-Ratings-Grid-JF-Library-Links.js";
   s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
@@ -81,7 +81,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ```
 (() => {
   const s = document.createElement("script");
-  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/Jellyfin-Episodes-Ratings-Grid-Only-IMDb-Links.js";
+  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid@latest/Jellyfin-Episodes-Ratings-Grid-Only-IMDb-Links.js";
   s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
