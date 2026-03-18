@@ -20,7 +20,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - If it fails to find the episode, it opens to the season, if that also fails, it falls back to opening the corresponding IMDb page
 - IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
 - Display a simple link to the IMDb ratings page when heatmap data is not available
-- Custom Themes compatibility
+- Compatible with custom themes & backgrounds
 - Heatmap data are loaded only after clicking the drop-down menu
 
 ## Transparency
