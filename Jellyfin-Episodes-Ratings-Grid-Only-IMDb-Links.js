@@ -1,4 +1,4 @@
-/* Jellyfin Episodes Ratings Grid 1.2 - (IMDb-Links-only) from github.com/Damocles-fr */
+/* Jellyfin Episodes Ratings Grid 1.3 - (IMDb-Links-only) from github.com/Damocles-fr */
 (function () {
   "use strict";
 
