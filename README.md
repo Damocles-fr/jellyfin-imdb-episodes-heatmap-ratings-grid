@@ -52,7 +52,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Installation
 
-### Choose only one version of the script
+##### Choose only one version of the script
 - *Jellyfin-Episodes-Ratings-Grid-JF-Library-Links-1.1.js* : Clicking a grid cell links to the corresponding **JF library item**
 - *Jellyfin-Episodes-Ratings-Grid-Only-IMDb-Links-1.0.js* : Clicking a grid cell links to the corresponding **IMDb website page**
 - Coming soon :  translucent version that blends in better with custom skins and backgrounds.
