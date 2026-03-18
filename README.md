@@ -17,10 +17,10 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Mobile-friendly** layout with horizontal scroll support
 - Sticky episode number column during horizontal scrolling
 - **Fast access** : Episodes and seasons cells are **linked to the library**
-- Custom skins compatibility
 - If it fails to find the episode, it opens to the season, if that also fails, it falls back to opening the corresponding IMDb page
 - IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
 - Display a simple link to the IMDb ratings page when heatmap data is not available
+- Custom skins compatibility
 - Heatmap data are loaded only after clicking the drop-down menu
 
 ## Transparency
