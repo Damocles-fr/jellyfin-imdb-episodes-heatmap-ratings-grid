@@ -75,7 +75,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ### OR
 
-- **Only IMDBs links** :
+- **Only IMDb links** :
 (Grid cell always links to the corresponding **IMDb page**.)
 
 ```
