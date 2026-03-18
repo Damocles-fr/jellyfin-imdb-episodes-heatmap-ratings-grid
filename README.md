@@ -87,15 +87,14 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 })();
 ```
 
-###### Alternatively, you can copy and paste the full script directly from the GitHub page rather than using cdn.jsdelivr. Note that this method does not support automatic updates.
-
 #### 5. Click ***Enabled*** => Click ***Save***
 
 #### 6. Refresh the a Jellyfin TV series page.
 
 You should see an **IMDb Episodes Grid** drop-down section on series pages.
 
-###### Alternatively, if you want to use it only in your web browser, or if you do not want to use the JS Injector plugin, you can install it with an extension like *Violentmonkey*.
+###### Alternatively, you can copy and paste the full script available on the GitHub rather than using cdn.jsdelivr. Note that this method does not support automatic updates.
+###### If you want to use it only in your web browser, or if you do not want to use the JS Injector plugin, you can install it with an extension like *Violentmonkey*.
 
 ## Technical
 
