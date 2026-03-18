@@ -73,7 +73,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 })();
 ```
 
-**OR**
+### OR
 
 - **Only IMDBs links** :
 (Grid cell always links to the corresponding **IMDb page**.)
@@ -87,7 +87,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 })();
 ```
 
-##### Alternatively, you can copy and paste the full script directly from the GitHub page rather than using cdn.jsdelivr. Note that this method does not support automatic updates.
+###### Alternatively, you can copy and paste the full script directly from the GitHub page rather than using cdn.jsdelivr. Note that this method does not support automatic updates.
 
 #### 5. Click ***Enabled*** => Click ***Save***
 
@@ -95,7 +95,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 You should see an **IMDb Episodes Grid** drop-down section on series pages.
 
-#### Alternatively, if you want to use it only in your web browser, or if you do not want to use the JS Injector plugin, you can install it with an extension like *Violentmonkey*.
+###### Alternatively, if you want to use it only in your web browser, or if you do not want to use the JS Injector plugin, you can install it with an extension like *Violentmonkey*.
 
 ## Technical
 
