@@ -53,25 +53,49 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Installation
 
-##### Choose only one version of the script
-- *Jellyfin-Episodes-Ratings-Grid-JF-Library-Links-1.1.js* : Clicking a grid cell links to the corresponding **JF library item**, fallback to opening the corresponding IMDb page.
-- *Jellyfin-Episodes-Ratings-Grid-Only-IMDb-Links-1.0.js* : Always links to the corresponding **IMDb website page**
-
 #### 1. Install the *Jellyfin JavaScript Injector* plugin in your Jellyfin server if it is not already installed (may need server reboot).
 
 #### 2. Open the Jellyfin admin ***dashboard***
 
 #### 3. Go to: ***Dashboard*** => ***JS Injector***
 
-#### 4. Create a new injected script
+#### 4. ***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the script you choose (**only one**) :
 
-***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the full [.js script you choose](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases) into the new field => Click ***Enabled*** => Click ***Save***
+- **JF library links** :
+(Grid cell links to the corresponding **Jellyfin library item**. If the episode cannot be found, it opens the season page instead. If that also fails, it falls back to the corresponding IMDb page)
 
-#### 5. Refresh the Jellyfin web interface and open a TV series page.
+```
+(() => {
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/Jellyfin-Episodes-Ratings-Grid-JF-Library-Links.js";
+  s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
+```
+
+**OR**
+
+- **Only IMDBs links** :
+(Grid cell always links to the corresponding **IMDb page**.)
+
+```
+(() => {
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/Jellyfin-Episodes-Ratings-Grid-Only-IMDb-Links.js";
+  s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
+```
+
+##### Alternatively, you can copy and paste the full script directly from the GitHub page rather than using cdn.jsdelivr. Note that this method does not support automatic updates.
+
+#### 5. Click ***Enabled*** => Click ***Save***
+
+#### 6. Refresh the a Jellyfin TV series page.
 
 You should see an **IMDb Episodes Grid** drop-down section on series pages.
 
-##### Alternatively, if you want to use it only in your web browser, or if you do not want to use the JS Injector plugin, you can install it with an extension like *Violentmonkey*.
+#### Alternatively, if you want to use it only in your web browser, or if you do not want to use the JS Injector plugin, you can install it with an extension like *Violentmonkey*.
 
 ## Technical
 
