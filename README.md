@@ -12,15 +12,14 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - Uses a **heatmap-style** graph ratings chart
 - Rating based color styling to make strong and weak episodes easy to identify at a glance
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
+- **Fast access** : Episodes and seasons cells are linked to the library (IMDb links version also available) 
 - **Highlights** the matching season number and episode number when hovering a cell
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** layout with horizontal scroll support
+- Fully compatible with **custom themes** & backgrounds
 - Sticky episode number column during horizontal scrolling
-- **Fast access** : Episodes and seasons cells are **linked to the library**
-- If it fails to find the episode, it opens to the season, if that also fails, it falls back to opening the corresponding IMDb page
-- IMDb website links–only version also available. USE ONLY ONE OF THE SCRIPTS AT A TIME
+- If it fails to find the episode, it opens to the season, if that also fails, it fallback to the corresponding IMDb page
 - Display a simple link to the IMDb ratings page when heatmap data is not available
-- Fully compatible with custom themes & backgrounds
 - Heatmap data are loaded only after clicking the drop-down menu
 
 ## Transparency
@@ -36,6 +35,11 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
 **Drop-down menu**
+
+<br>
+
+![Many seasons scroll](./assets/Skins-support.webp)
+**Skins compatibility**
 
 <br>
 
