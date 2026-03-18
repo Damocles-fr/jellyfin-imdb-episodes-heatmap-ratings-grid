@@ -76,6 +76,7 @@ You should see an **IMDb Episodes Grid** drop-down section on series pages.
 ## Technical
 
 - It is not compatible with Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector.
+- Compatible with Jellyfin 10.11 and above. Not tested on Jellyfin 10.10 and under.
 - Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
 - DOM insertion in a stable location on series page (between Seasons and cast)
 - Data source : The heatmap data is loaded from the IMDb heatmap dataset by @mokronos
