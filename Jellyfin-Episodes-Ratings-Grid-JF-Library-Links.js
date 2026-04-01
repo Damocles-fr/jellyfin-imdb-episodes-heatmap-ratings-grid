@@ -341,5 +341,6 @@ document.addEventListener('viewbeforeshow',()=>{hideTooltip();scheduleRun(0);},t
 if(document.body)new MutationObserver(()=>{if(!isDetails())return;const id=itemIdFromUrl()||'';if(!id)return;const b=currentBlock(id);if(!b||!b.isConnected||!visible(b))scheduleRun(CFG.reapplyDelayMs);}).observe(document.body,{childList:true,subtree:true});
 
 setInterval(()=>{if(!isDetails())return;const id=itemIdFromUrl()||'',b=id?currentBlock(id):null;if(id&&id!==lastItemId){lastItemId=id;scheduleBurst([0,350,900]);return;}if(id&&(!b||!b.isConnected||!visible(b)))scheduleRun(CFG.reapplyDelayMs);},CFG.watchDogMs);
+
 scheduleRun(0);
 })();
