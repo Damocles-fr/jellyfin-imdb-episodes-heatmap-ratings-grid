@@ -23,7 +23,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
     - New top-left button to invert the grid layout (Seasons ↔ Episodes). Preference stored locally. Thanks to [@ya0903](https://github.com/ya0903/jellyfin-episode-grid)
     - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
     - Improved compatibility with hover-based info/tooltips scripts and plugins
-    - Various fixes & Improvements
+    - [Various fixes & Improvements](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases/tag/1.5)
 
 ## Transparency
 
