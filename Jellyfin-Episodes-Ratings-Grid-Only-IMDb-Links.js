@@ -124,7 +124,7 @@ ${CFG.root}{--c1:2.72rem;--c2:3.05rem;--rh:2.36rem;--axis:rgba(34,34,40,.84);--a
 .jf-ieg-cell{height:var(--rh);min-height:var(--rh);max-height:var(--rh);display:flex;align-items:center;justify-content:center;text-align:center;border-radius:8px;box-sizing:border-box;padding:.18rem .24rem;line-height:1;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);font-size:.86rem;position:relative;flex:0 0 auto}
 .jf-ieg-season,.jf-ieg-rating,.jf-ieg-empty,.jf-ieg-ghost{width:var(--c1);min-width:var(--c1);max-width:var(--c1)}.jf-ieg-episode{width:var(--c2);min-width:var(--c2);max-width:var(--c2)}.jf-ieg-episode-compact,.jf-ieg-corner-compact{width:var(--c1);min-width:var(--c1);max-width:var(--c1)}.jf-ieg-corner-wide{width:var(--c2);min-width:var(--c2);max-width:var(--c2)}
 .jf-ieg-corner{position:sticky;left:0;z-index:6;background:var(--axis) !important;border-color:rgba(255,255,255,.14) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.jf-ieg-corner-btn{cursor:pointer;outline:none !important;-webkit-tap-highlight-color:transparent}.jf-ieg-corner-btn:hover,.jf-ieg-corner-btn.is-active{background:var(--axis2) !important;border-color:rgba(255,255,255,.24) !important}.jf-ieg-corner-icon{width:1rem;height:1rem;display:block;opacity:.92;transition:transform .16s ease,opacity .16s ease;pointer-events:none}.jf-ieg-corner-btn.is-active .jf-ieg-corner-icon{transform:rotate(180deg)}
+.jf-ieg-corner-btn{cursor:pointer;outline:none !important;-webkit-tap-highlight-color:transparent;color:inherit}.jf-ieg-corner-btn:hover{background:var(--axis2) !important;border-color:rgba(255,255,255,.24) !important}.jf-ieg-corner-icon{width:1rem;height:1rem;display:block;opacity:.92;transition:transform .16s ease,opacity .16s ease;pointer-events:none;color:inherit}
 .jf-ieg-season,.jf-ieg-episode{font-weight:700;background:var(--axis) !important;font-size:.89rem;color:inherit !important;text-decoration:none !important;outline:none !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;border-color:rgba(255,255,255,.14) !important}
 .jf-ieg-season:hover,.jf-ieg-episode:hover{background:var(--axis2) !important;border-color:rgba(255,255,255,.24) !important}
 .jf-ieg-sticky-left{position:sticky;left:0;z-index:5;background:var(--axis) !important;border-color:rgba(255,255,255,.14) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important}
@@ -200,9 +200,9 @@ function renderGrid(body,seasons,imdbId,sid,seriesName){
 
   const corner=document.createElement('button');
   corner.type='button';
-  corner.className='jf-ieg-cell jf-ieg-corner jf-ieg-corner-btn '+(inverted?'jf-ieg-corner-compact is-active':'jf-ieg-corner-wide');
+  corner.className='jf-ieg-cell jf-ieg-corner jf-ieg-corner-btn '+(inverted?'jf-ieg-corner-compact':'jf-ieg-corner-wide');
   corner.setAttribute('aria-label','Invert grid axes');
-  corner.innerHTML='<svg class="jf-ieg-corner-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2.5 4.5H11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8.5 2L11 4.5 8.5 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 11.5H5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 9L5 11.5 7.5 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  corner.innerHTML='<svg class="jf-ieg-corner-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="color:inherit"><path d="M2.5 4.5H11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8.5 2L11 4.5 8.5 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 11.5H5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 9L5 11.5 7.5 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   grid.appendChild(corner);
 
   const mkSeason=s=>{
