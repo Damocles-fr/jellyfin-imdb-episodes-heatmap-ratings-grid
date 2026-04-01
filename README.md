@@ -46,13 +46,6 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 <br>
 
-<p align="center">
-  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-5-android.webp" alt="Android view" width="320"><br>
-  <strong>Mobile-friendly</strong>
-</p>
-
-<br>
-
 ## Installation
 
 #### 1. Install the *Jellyfin JavaScript Injector* plugin in your Jellyfin server if it is not already installed (may need server reboot).
