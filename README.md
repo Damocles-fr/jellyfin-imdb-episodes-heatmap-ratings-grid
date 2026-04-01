@@ -9,13 +9,13 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Features
 
-- Uses a **heatmap-style** graph ratings chart
+- **heatmap-style** graph ratings chart
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
 - **Fast access** : Episodes and seasons cells are linked to the library
 - **Highlights** the matching season number and episode number when hovering a cell
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
-- Fully compatible with **custom themes** & backgrounds
+- **custom themes** & backgrounds compatibility
 - Heatmap data are **loaded only after clicking the drop-down menu**
 - **New** :
     - Compatibility to use HoverDetails script distributed through the new [**ModManager** plugin, thanks to @grimmdev](https://github.com/Jellyfin-PG/Mod-Manager)
@@ -23,7 +23,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
     - New top-left button to invert the grid layout (Seasons ↔ Episodes). Preference stored locally. Thanks to [@ya0903](https://github.com/ya0903/jellyfin-episode-grid)
     - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
     - Improved compatibility with hover-based info/tooltips scripts and plugins
-    - Variopus fixes & Improvements
+    - Various fixes & Improvements
 
 ## Transparency
 
