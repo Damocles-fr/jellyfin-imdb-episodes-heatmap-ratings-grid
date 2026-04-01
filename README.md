@@ -18,7 +18,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap data are **loaded only after clicking the drop-down menu**
 - **New** :
-    - Compatibility to use HoverDetails script distributed through the new [**ModManager** plugin, thanks to @grimmdev](https://github.com/Jellyfin-PG/Mod-Manager)
+    - Compatibility to use with HoverDetails script distributed through the new [**ModManager** plugin, thanks to @grimmdev](https://github.com/Jellyfin-PG/Mod-Manager)
     - Larger IMDb episode ratings dataset thanks to [@ya0903](https://github.com/ya0903/imdb-episode-dataset)
     - New top-left button to invert the grid layout (Seasons ↔ Episodes). Preference stored locally. Thanks to [@ya0903](https://github.com/ya0903/jellyfin-episode-grid)
     - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
