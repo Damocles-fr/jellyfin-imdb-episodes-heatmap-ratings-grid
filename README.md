@@ -20,7 +20,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **New** :
     - Compatibility to use with HoverDetails script distributed through the new [**ModManager** plugin, thanks to @grimmdev](https://github.com/Jellyfin-PG/Mod-Manager)
     - Larger IMDb episode ratings dataset thanks to [@ya0903](https://github.com/ya0903/imdb-episode-dataset)
-    - New **top-left button to invert the grid layout** (Seasons ↔ Episodes). Preference stored locally. Thanks to [@ya0903](https://github.com/ya0903/jellyfin-episode-grid)
+    - New **top-left button to invert the grid layout** (Seasons ↔ Episodes). Preference stored locally.
     - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
     - Improved compatibility with hover-based info/tooltips scripts and plugins
     - [Various fixes & Improvements](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases/tag/1.5)
