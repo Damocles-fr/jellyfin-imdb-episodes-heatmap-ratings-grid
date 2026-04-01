@@ -10,17 +10,20 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ## Features
 
 - Uses a **heatmap-style** graph ratings chart
-- Rating based color styling to make strong and weak episodes easy to identify at a glance
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
-- **Fast access** : Episodes and seasons cells are linked to the library (IMDb links version also available) 
+- **Fast access** : Episodes and seasons cells are linked to the library
 - **Highlights** the matching season number and episode number when hovering a cell
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
-- **Mobile-friendly** layout with horizontal scroll support
+- **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Fully compatible with **custom themes** & backgrounds
-- Sticky episode number column during horizontal scrolling
-- If it fails to find the episode, it opens to the season, if that also fails, it fallback to the corresponding IMDb page
-- Display a simple link to the IMDb ratings page when heatmap data is not available
-- Heatmap data are loaded only after clicking the drop-down menu
+- Heatmap data are **loaded only after clicking the drop-down menu**
+- **New** :
+    - Compatibility to use HoverDetails script distributed through the new [**ModManager** plugin, thanks to @grimmdev](https://github.com/Jellyfin-PG/Mod-Manager)
+    - Larger IMDb episode ratings dataset thanks to [@ya0903](https://github.com/ya0903/imdb-episode-dataset)
+    - New top-left button to invert the grid layout (Seasons ↔ Episodes). Thanks to [@ya0903](https://github.com/ya0903/jellyfin-episode-grid)
+    - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
+    - Improved compatibility with hover-based info/tooltips scripts and plugins
+    - Variopus fixes & Improvements
 
 ## Transparency
 
@@ -63,29 +66,11 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 #### 3. Go to: ***Dashboard*** => ***JS Injector***
 
-#### 4. ***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the script you choose (**only one**) :
-
-- **JF library links** :
-(Grid cell links to the corresponding **Jellyfin library item**. If the episode cannot be found, it opens the season page instead. If that also fails, it falls back to the corresponding IMDb page)
-
+#### 4. ***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste the script you choose :
 ```
 (() => {
   const s = document.createElement("script");
   s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid@latest/Jellyfin-Episodes-Ratings-Grid-JF-Library-Links.js";
-  s.async = true;
-  (document.head || document.documentElement).appendChild(s);
-})();
-```
-
-### OR
-
-- **Only IMDb links** :
-(Grid cell always links to the corresponding **IMDb page**.)
-
-```
-(() => {
-  const s = document.createElement("script");
-  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid@latest/Jellyfin-Episodes-Ratings-Grid-Only-IMDb-Links.js";
   s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
@@ -99,16 +84,15 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Technical
 
-- It won't display on Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector.
-- Compatible with Jellyfin 10.11 and above. Not tested on Jellyfin 10.10 and under.
+- It won't display on Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector
+- Compatible with Jellyfin 10.11 and above. Not tested on Jellyfin 10.10 and under
 - Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
 - DOM insertion in a stable location on series page (between Seasons and cast)
-- Data source : The heatmap data is loaded from the IMDb heatmap dataset by @mokronos
+- Data source : The heatmap data is loaded from the IMDb heatmap dataset by @ya0903
 - Heatmap data is loaded only after clicking the drop-down menu
-- When a supported series page is detected, the script requests the current Jellyfin item metadata through the local Jellyfin API and reads the **IMDb provider ID** from the item's `ProviderIds`.
-- When the drop-down is opened, the script fetches the corresponding JSON dataset from the IMDb heatmap dataset source
-- If the dataset exists, the script builds the full ratings grid
-- If the dataset is missing, the script shows a fallback link to the IMDb ratings page for that series
+- When a supported series page is detected, the script requests the current Jellyfin item metadata through the local Jellyfin API and reads the **IMDb provider ID** from the item's `ProviderIds`
+- When the drop-down is opened, the script fetches the corresponding JSON dataset from the IMDb heatmap dataset source (fallback to Jellyfin episode metadata when the IMDb dataset has no rating)
+- If the ratings exists, the script builds the full ratings grid
 - Cached requests for item metadata and external ratings dataset to reduce repeated loading
 
 ## Need Help?
