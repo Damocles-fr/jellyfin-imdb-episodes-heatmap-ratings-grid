@@ -41,11 +41,6 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 <br>
 
-![Many seasons scroll](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-Skins-support.webp)
-**Skins compatibility**
-
-<br>
-
 ![Many seasons scroll](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-2-manyseasonsscroll_resultat.webp)
 **Sticky column & Highlights**
 
