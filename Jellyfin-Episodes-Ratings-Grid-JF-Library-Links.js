@@ -1,1319 +1,346 @@
-/* Jellyfin Episodes Ratings Grid 1.3 - (JF Library Link, fallback to IMDb pages) from github.com/Damocles-fr */
-(function () {
-  "use strict";
+(function(){
+'use strict';
+const CFG={title:'IMDb Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v6',root:'[data-jf-ieg-root="1"]',datasetBase:'https://cdn.jsdelivr.net/gh/ya0903/imdb-episode-dataset@main/data/shows',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,ttl:86400000};
+const INV_KEY='jf-imdb-episodes-grid-inverted-v1';
+const HOVER_STYLE_ID='jf-hover-tooltip-style';
+const HOVER_TOOLTIP_ID='jf-hover-tooltip';
+let scheduled=null,burst=[],runSeq=0,lastItemId='';
+let hoverTimer=null,hoverCard=null,hoverX=0,hoverY=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const q=(s,r=document)=>r.querySelector(s);
+const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const cacheGet=k=>{try{const o=JSON.parse(sessionStorage.getItem(k)||'null');if(!o||Date.now()>o.e)return null;return o.v;}catch{return null;}};
+const cacheSet=(k,v,ttl=CFG.ttl)=>{try{sessionStorage.setItem(k,JSON.stringify({v,e:Date.now()+ttl}));}catch{}};
+const normId=s=>{s=String(s||'').trim();return s?(s.startsWith('tt')?s:'tt'+s):'';};
+const toRating=v=>{const n=typeof v==='string'?parseFloat(v):Number(v);return Number.isFinite(n)&&n>0&&n<=10?n:null;};
+const getInv=()=>{try{return localStorage.getItem(INV_KEY)==='true';}catch{return false;}};
+const setInv=v=>{try{localStorage.setItem(INV_KEY,v?'true':'false');}catch{}};
+const scheduleRun=d=>{if(scheduled)clearTimeout(scheduled);scheduled=setTimeout(()=>{scheduled=null;run();},typeof d==='number'?d:0);};
+const scheduleBurst=arr=>{burst.forEach(clearTimeout);burst=[];(arr||[0]).forEach(d=>burst.push(setTimeout(run,d||0)));};
+const token=()=>{try{const o=JSON.parse(localStorage.getItem('jellyfin_credentials')||'null');const ss=o&&o.Servers||[];for(const s of ss)if(s&&s.AccessToken)return s.AccessToken;}catch{}return null;};
+const api=async path=>{const t=token();if(!t)throw new Error('no token');const r=await fetch(location.origin+path,{headers:{'X-Emby-Token':t}});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();};
+const itemIdFromUrl=()=>{const u=new URL(location.href);return u.searchParams.get('id')||(((u.hash||'').match(/[?&]id=([^&]+)/)||[])[1]?decodeURIComponent(((u.hash||'').match(/[?&]id=([^&]+)/)||[])[1]):null);};
+const serverIdFromUrl=()=>{const u=new URL(location.href);return u.searchParams.get('serverId')||(((u.hash||'').match(/[?&]serverId=([^&]+)/)||[])[1]?decodeURIComponent(((u.hash||'').match(/[?&]serverId=([^&]+)/)||[])[1]):'');};
+const detailsHash=(id,sid)=>'/details?id='+encodeURIComponent(id)+'&serverId='+encodeURIComponent(sid);
+const webRoot=()=>{const m=String(location.pathname||'').match(/^(.*\/web\/)(?:index\.html)?$/i);return m?m[1]:'/web/';};
+const detailsUrl=(id,sid)=>location.origin+webRoot()+'#'+detailsHash(id,sid);
+const visible=el=>{if(!el||!el.isConnected)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&cs.opacity!=='0'&&r.width>2&&r.height>2;};
+const best=els=>{let b=null,a=0;for(const el of els){if(!visible(el))continue;const r=el.getBoundingClientRect(),x=r.width*r.height;if(x>a){a=x;b=el;}}return b||els[els.length-1]||null;};
+const isDetails=()=>{const h=String(location.hash||'');return h.includes('/details')&&(h.includes('id=')||new URL(location.href).searchParams.get('id'));};
+const imdbFromItem=item=>{const ids=item&&item.ProviderIds||{};for(const k of Object.keys(ids))if(String(k).toLowerCase()==='imdb')return normId(ids[k]);return '';};
 
-  const CFG = {
-    title: "IMDb Episodes Grid",
-    debug: false,
-    styleId: "jf-imdb-episodes-grid-style-v1",
-    rootSelector: '[data-jf-ieg-root="1"]',
-    watchDogMs: 800,
-    maxWaitMs: 12000,
-    reapplyDelayMs: 250,
-    readyAnchorWaitMs: 2200,
-    itemTtlMs: 1000 * 60 * 60 * 24,
-    datasetTtlMs: 1000 * 60 * 60 * 24
+async function fetchItem(id){const k='ieg_item_'+id,c=cacheGet(k);if(c)return c;const v=await api('/Items/'+encodeURIComponent(id)+'?Fields=ProviderIds');cacheSet(k,v);return v;}
+
+async function fetchDataset(imdbId){
+  const k='ieg_ds_'+imdbId,c=cacheGet(k);if(c!==null)return c;
+  const r=await fetch(CFG.datasetBase+'/'+encodeURIComponent(imdbId)+'.json',{credentials:'omit'});
+  if(r.status===404){cacheSet(k,null);return null;}
+  if(!r.ok)throw new Error('dataset '+r.status);
+  const show=await r.json(),seasons=show&&show.seasons;
+  if(!seasons||typeof seasons!=='object'){cacheSet(k,null);return null;}
+  const nums=Object.keys(seasons).map(Number).filter(n=>n>0);
+  if(!nums.length){cacheSet(k,null);return null;}
+  const max=Math.max(...nums),out=[];
+  for(let s=1;s<=max;s++){
+    const eps=Object.entries(seasons[String(s)]||{}).map(([n,d])=>({episode:parseInt(n,10),rating:toRating(d&&d.r),id:normId((d&&((d.i)||(d.id)||(d.imdb)||(d.imdbId)))||'')})).filter(e=>Number.isFinite(e.episode)&&e.episode>0).sort((a,b)=>a.episode-b.episode);
+    out.push(eps);
+  }
+  const val=out.some(a=>a.length)?out:null;cacheSet(k,val);return val;
+}
+
+async function fetchJf(seriesId){
+  const k='ieg_jf_'+seriesId,c=cacheGet(k);if(c)return c;
+  const [epsRes,ssRes]=await Promise.all([
+    api('/Shows/'+encodeURIComponent(seriesId)+'/Episodes?Fields=ProviderIds,CommunityRating,IndexNumberEnd,ParentIndexNumber,IndexNumber,Name,PremiereDate&EnableImages=false&EnableUserData=false&Limit=20000').catch(()=>({Items:[]})),
+    api('/Shows/'+encodeURIComponent(seriesId)+'/Seasons?Fields=IndexNumber&EnableImages=false&EnableUserData=false').catch(()=>({Items:[]}))
+  ]);
+  const seasonsByNum={},seasonIds={};
+  for(const s of (ssRes.Items||[])){const n=Number(s&&s.IndexNumber);if(Number.isFinite(n)&&n>0)seasonIds[n]=s.Id||'';}
+  for(const ep of (epsRes.Items||[])){
+    const sn=Number(ep&&ep.ParentIndexNumber),en=Number(ep&&ep.IndexNumber);
+    if(!Number.isFinite(sn)||!Number.isFinite(en)||sn<1||en<1)continue;
+    const end=typeof ep.IndexNumberEnd==='number'&&ep.IndexNumberEnd>=en?ep.IndexNumberEnd:en;
+    if(!seasonsByNum[sn])seasonsByNum[sn]=[];
+    seasonsByNum[sn].push({ep:en,epEnd:end,jfId:ep.Id||'',name:ep.Name||'',airDate:ep.PremiereDate||'',imdbEpId:normId((ep.ProviderIds&&(ep.ProviderIds.Imdb||ep.ProviderIds.imdb))||''),rating:toRating(ep&&ep.CommunityRating)});
+  }
+  const val={seasonsByNum,seasonIds};cacheSet(k,val);return val;
+}
+
+function mergeData(ds,jf){
+  const nums=[0,...Object.keys(jf.seasonsByNum||{}).map(Number),...(ds?ds.map((_,i)=>i+1):[])],max=Math.max(...nums),out=[];
+  for(let s=1;s<=max;s++){
+    const byEp={},jfList=(jf.seasonsByNum[s]||[]),dsList=((ds&&ds[s-1])||[]);
+    for(const e of dsList)if(e&&Number.isFinite(e.episode)&&e.episode>0)byEp[e.episode]={ep:e.episode,exists:true,rating:toRating(e.rating),imdbEpId:e.id||'',jfId:'',name:'',airDate:'',combined:false};
+    for(const j of jfList){
+      const start=Number(j.ep),end=Number(j.epEnd)>=start?Number(j.epEnd):start;
+      for(let n=start;n<=end;n++){
+        if(!byEp[n])byEp[n]={ep:n,exists:true,rating:null,imdbEpId:'',jfId:'',name:'',airDate:'',combined:end>start};
+        const x=byEp[n];
+        if(x.rating==null&&j.rating!=null)x.rating=j.rating;
+        if(!x.imdbEpId&&j.imdbEpId)x.imdbEpId=j.imdbEpId;
+        if(!x.jfId&&j.jfId)x.jfId=j.jfId;
+        if(!x.name&&j.name)x.name=j.name;
+        if(!x.airDate&&j.airDate)x.airDate=j.airDate;
+        if(end>start)x.combined=true;
+      }
+    }
+    const episodes=Object.values(byEp).sort((a,b)=>a.ep-b.ep);
+    if(episodes.length)out.push({num:s,seasonJfId:jf.seasonIds[s]||'',episodes});
+  }
+  return out;
+}
+
+function ratingStyle(r){
+  const v=toRating(r);if(v==null)return '';
+  let h=0,s=78,l=16;
+  if(v>=9.5){h=92;s=100;l=51.5;}
+  else if(v>=9.0){h=120;s=100;l=45;}
+  else if(v>=8.0){h=84;s=98;l=30.6;}
+  else if(v>=7.0){h=32;s=88;l=20;}
+  else if(v>=6.0){h=18;s=90;l=19;}
+  else if(v>=5.0){h=10;s=84;l=17;}
+  else if(v>=4.0){h=6;s=82;l=15;}
+  else if(v>=3.0){h=3;s=80;l=14;}
+  else if(v>=2.0){h=1;s=78;l=13;}
+  else{h=0;s=76;l=12;}
+  const frac=v%1,lb=frac*(v>=7?7:3.8),light=Math.min(l+lb,v>=7?72:26),a=v>=7?(.82+frac*.12):(.92+frac*.04);
+  let glow='inset 0 1px 0 rgba(255,255,255,.06)';
+  if(v>=9.8)glow='0 0 8px rgba(255,240,28,.24),0 0 16px rgba(255,240,28,.12),inset 0 1px 0 rgba(255,255,255,.12)';
+  else if(v>=9.7)glow='0 0 8px rgba(146,255,74,.28),0 0 16px rgba(146,255,74,.13),inset 0 1px 0 rgba(255,255,255,.11)';
+  else if(v>=9.6)glow='0 0 6px rgba(86,255,72,.22),0 0 12px rgba(86,255,72,.10),inset 0 1px 0 rgba(255,255,255,.10)';
+  else if(v>=9.0)glow='0 0 5px hsla('+h+','+s+'%,'+(light+8)+'%,.28),inset 0 1px 0 rgba(255,255,255,.08)';
+  return 'background:hsla('+h+','+s+'%,'+light+'%,'+a+');border-color:hsla('+h+','+s+'%,'+Math.min(light+(v>=7?18:10),v>=7?85:34)+'%,.30);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.70);box-shadow:'+glow+';';
+}
+
+function injectStyle(){
+  if(document.getElementById(CFG.styleId))return;
+  const s=document.createElement('style');s.id=CFG.styleId;s.textContent=`
+${CFG.root}{--c1:2.72rem;--c2:3.05rem;--rh:2.36rem;--axis:rgba(34,34,40,.84);--axis2:rgba(48,48,56,.90);margin:.85em 0 1.1em;position:relative;z-index:3;clear:both;width:100%;max-width:calc(100% - 3.15rem)}
+.jf-ieg-box{border-radius:12px;overflow:hidden;background:rgba(18,18,18,.26);border:1px solid rgba(255,255,255,.08)}
+.jf-ieg-toggle{width:100%;display:flex;align-items:center;gap:.42rem;border:0;margin:0;padding:.72rem .95rem;cursor:pointer;color:inherit;background:rgba(255,255,255,.03);text-align:left;font:inherit;outline:none !important;box-shadow:none !important;-webkit-tap-highlight-color:transparent}.jf-ieg-toggle:hover{background:rgba(255,255,255,.05)}.jf-ieg-toggle-label{font-size:1.05rem;font-weight:700;line-height:1.2}.jf-ieg-toggle-icon{transition:transform .16s ease;opacity:.92;flex:0 0 auto}.jf-ieg-toggle[aria-expanded="true"] .jf-ieg-toggle-icon{transform:rotate(180deg)}
+.jf-ieg-panel{border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.09);overflow:hidden}.jf-ieg-panel[hidden]{display:none !important}.jf-ieg-body{padding:.72rem .82rem .82rem;background:rgba(0,0,0,.06);overflow:hidden}.jf-ieg-status{font-size:.92rem;opacity:.9;padding:.15rem .05rem}.jf-ieg-link{color:inherit !important;text-decoration:none !important;font-weight:700}
+.jf-ieg-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:.08rem;padding-right:.55rem;max-width:100%}
+.jf-ieg-grid{display:grid;column-gap:.26rem;row-gap:.26rem;align-items:stretch;min-width:max-content;grid-auto-rows:var(--rh)}
+.jf-ieg-cell{height:var(--rh);min-height:var(--rh);max-height:var(--rh);display:flex;align-items:center;justify-content:center;text-align:center;border-radius:8px;box-sizing:border-box;padding:.18rem .24rem;line-height:1;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);font-size:.86rem;position:relative;flex:0 0 auto}
+.jf-ieg-season,.jf-ieg-rating,.jf-ieg-empty,.jf-ieg-ghost{width:var(--c1);min-width:var(--c1);max-width:var(--c1)}.jf-ieg-episode{width:var(--c2);min-width:var(--c2);max-width:var(--c2)}.jf-ieg-episode-compact,.jf-ieg-corner-compact{width:var(--c1);min-width:var(--c1);max-width:var(--c1)}.jf-ieg-corner-wide{width:var(--c2);min-width:var(--c2);max-width:var(--c2)}
+.jf-ieg-corner{position:sticky;left:0;z-index:6;background:var(--axis) !important;border-color:rgba(255,255,255,.14) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.jf-ieg-corner-btn{cursor:pointer;outline:none !important;-webkit-tap-highlight-color:transparent}.jf-ieg-corner-btn:hover,.jf-ieg-corner-btn.is-active{background:var(--axis2) !important;border-color:rgba(255,255,255,.24) !important}.jf-ieg-corner-icon{width:1rem;height:1rem;display:block;opacity:.92;transition:transform .16s ease,opacity .16s ease;pointer-events:none}.jf-ieg-corner-btn.is-active .jf-ieg-corner-icon{transform:rotate(180deg)}
+.jf-ieg-season,.jf-ieg-episode{font-weight:700;background:var(--axis) !important;font-size:.89rem;color:inherit !important;text-decoration:none !important;outline:none !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;border-color:rgba(255,255,255,.14) !important}
+.jf-ieg-season:hover,.jf-ieg-episode:hover{background:var(--axis2) !important;border-color:rgba(255,255,255,.24) !important}
+.jf-ieg-sticky-left{position:sticky;left:0;z-index:5;background:var(--axis) !important;border-color:rgba(255,255,255,.14) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important}
+.jf-ieg-axis-match{background:var(--axis2) !important;border-color:rgba(255,255,255,.30) !important;box-shadow:0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.05) !important}
+.jf-ieg-rating{cursor:pointer;font-weight:900;font-size:1.28rem;letter-spacing:-.03em;font-variant-numeric:tabular-nums;transition:filter .16s ease,border-color .16s ease,box-shadow .16s ease;text-decoration:none !important;outline:none !important;color:#fff !important;z-index:1}.jf-ieg-rating:hover{filter:brightness(1.36) saturate(1.42) contrast(1.12);border-color:rgba(255,255,255,.22)}
+.jf-ieg-rating-96{filter:brightness(1.26) saturate(1.34) contrast(1.10);text-shadow:0 1px 0 rgba(0,0,0,.88),0 0 1px rgba(0,0,0,.58),0 0 5px rgba(86,255,72,.26),0 0 10px rgba(86,255,72,.11) !important}
+.jf-ieg-rating-97{filter:brightness(1.32) saturate(1.40) contrast(1.12);text-shadow:0 1px 0 rgba(0,0,0,.90),0 0 1px rgba(0,0,0,.60),0 0 6px rgba(146,255,74,.32),0 0 12px rgba(146,255,74,.15) !important}
+.jf-ieg-rating-98plus{filter:brightness(1.36) saturate(1.42) contrast(1.12);text-shadow:0 1px 0 rgba(0,0,0,.90),0 0 1px rgba(0,0,0,.60),0 0 6px rgba(255,240,28,.34),0 0 12px rgba(255,240,28,.18) !important}
+.jf-ieg-rating-96:hover{filter:brightness(1.34) saturate(1.40) contrast(1.12) !important;box-shadow:0 0 8px rgba(86,255,72,.30),0 0 16px rgba(86,255,72,.15),0 0 22px rgba(86,255,72,.08),inset 0 0 0 1px rgba(255,255,255,.05),inset 0 1px 0 rgba(255,255,255,.04) !important}
+.jf-ieg-rating-97:hover{filter:brightness(1.40) saturate(1.46) contrast(1.13) !important;box-shadow:0 0 10px rgba(146,255,74,.36),0 0 19px rgba(146,255,74,.20),0 0 26px rgba(146,255,74,.11),inset 0 0 0 1px rgba(255,255,255,.06),inset 0 1px 0 rgba(255,255,255,.05) !important}
+.jf-ieg-rating-98plus:hover{filter:brightness(1.40) saturate(1.46) contrast(1.13) !important;box-shadow:0 0 10px rgba(255,240,28,.38),0 0 19px rgba(255,240,28,.22),0 0 28px rgba(255,240,28,.12),inset 0 0 0 1px rgba(255,255,255,.06),inset 0 1px 0 rgba(255,255,255,.05) !important}
+.jf-ieg-empty{cursor:pointer;font-weight:800;font-size:1.02rem;color:rgba(255,255,255,.76) !important;text-decoration:none !important;outline:none !important;background:rgba(112,112,124,.18) !important;border-color:rgba(220,220,230,.12) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important}.jf-ieg-empty:hover{filter:brightness(1.10);border-color:rgba(255,255,255,.18) !important}
+.jf-ieg-ghost{opacity:0;pointer-events:none;background:transparent !important;border-color:transparent !important;box-shadow:none !important}
+@media (max-width:900px){${CFG.root}{max-width:calc(100% - .4rem)}.jf-ieg-body{padding:.72rem .42rem .82rem .42rem !important}.jf-ieg-scroll{padding-right:.12rem !important}}
+`;document.head.appendChild(s);
+}
+
+function ensureHoverStyle(){
+  if(document.getElementById(HOVER_STYLE_ID))return;
+  const s=document.createElement('style');s.id=HOVER_STYLE_ID;s.textContent='#'+HOVER_TOOLTIP_ID+'{position:fixed;z-index:99999;background:rgba(15,15,15,.95);color:#fff;padding:16px;border-radius:10px;width:320px;box-shadow:0 12px 40px rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(12px);pointer-events:none;opacity:0;transition:opacity .2s ease-in-out;display:none;font-family:sans-serif}#'+HOVER_TOOLTIP_ID+'.visible{opacity:1;display:block}.jf-tooltip-title{font-size:1.15em;font-weight:800;margin:0 0 6px;color:#fff;line-height:1.2}.jf-tooltip-meta{font-size:.8em;color:#10b981;margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}.jf-tooltip-overview{font-size:.85em;line-height:1.5;color:#d1d5db;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}';document.head.appendChild(s);
+}
+function getTooltip(){let t=document.getElementById(HOVER_TOOLTIP_ID);if(!t){t=document.createElement('div');t.id=HOVER_TOOLTIP_ID;document.body.appendChild(t);}return t;}
+function hideTooltip(){clearTimeout(hoverTimer);hoverTimer=null;hoverCard=null;const t=document.getElementById(HOVER_TOOLTIP_ID);if(t)t.classList.remove('visible');}
+function positionTooltip(t){let x=hoverX+15,y=hoverY+15;if(x+340>window.innerWidth)x=hoverX-335;if(y+200>window.innerHeight)y=hoverY-180;t.style.left=x+'px';t.style.top=y+'px';}
+async function fetchHoverItem(id){if(typeof ApiClient==='undefined'||!id)return null;const uid=ApiClient.getCurrentUserId&&ApiClient.getCurrentUserId();if(!uid)return null;try{return await ApiClient.getJSON(ApiClient.getUrl('Users/'+uid+'/Items/'+id));}catch{return null;}}
+function showTooltip(item){
+  const t=getTooltip();
+  const meta=[item.ProductionYear||'',item.CommunityRating?('⭐ '+item.CommunityRating.toFixed(1)):'',item.Genres&&item.Genres.slice?item.Genres.slice(0,3).join(','):''].filter(Boolean).join('<span style="color:#666">|</span>');
+  t.innerHTML='<div class="jf-tooltip-title">'+(item.Name||'')+'</div><div class="jf-tooltip-meta">'+(meta||'')+'</div><div class="jf-tooltip-overview">'+(item.Overview||'No synopsis available.')+'</div>';
+  positionTooltip(t);t.classList.add('visible');
+}
+function bindCellHover(el,jfId){
+  if(!el||!jfId||el.dataset.jfHoverBound==='1')return;
+  el.dataset.jfHoverBound='1';
+  ensureHoverStyle();
+  el.addEventListener('mouseenter',e=>{hoverCard=el;hoverX=e.clientX;hoverY=e.clientY;clearTimeout(hoverTimer);hoverTimer=setTimeout(async()=>{if(hoverCard!==el)return;const item=await fetchHoverItem(jfId);if(item&&hoverCard===el)showTooltip(item);},800);});
+  el.addEventListener('mousemove',e=>{hoverX=e.clientX;hoverY=e.clientY;const t=document.getElementById(HOVER_TOOLTIP_ID);if(t&&t.classList.contains('visible'))positionTooltip(t);});
+  el.addEventListener('mouseleave',()=>{if(hoverCard===el)hoverCard=null;hideTooltip();});
+  el.addEventListener('click',hideTooltip);
+}
+
+function clearAxisHighlight(scope){qa('.jf-ieg-axis-match',scope).forEach(el=>el.classList.remove('jf-ieg-axis-match'));}
+function setAxisHighlight(scope,snum,epnum){
+  clearAxisHighlight(scope);
+  if(snum!=null){const x=q('[data-jf-axis-season="'+snum+'"]',scope);if(x)x.classList.add('jf-ieg-axis-match');}
+  if(epnum!=null){const x=q('[data-jf-axis-episode="'+epnum+'"]',scope);if(x)x.classList.add('jf-ieg-axis-match');}
+}
+function bindAxisHover(el,scope,snum,epnum){
+  if(!el||el.dataset.jfAxisBound==='1')return;
+  el.dataset.jfAxisBound='1';
+  el.addEventListener('mouseenter',()=>setAxisHighlight(scope,snum,epnum));
+  el.addEventListener('mouseleave',()=>clearAxisHighlight(scope));
+  el.addEventListener('focus',()=>setAxisHighlight(scope,snum,epnum),true);
+  el.addEventListener('blur',()=>clearAxisHighlight(scope),true);
+}
+
+function bindInternalNav(root,sid){
+  root.addEventListener('click',e=>{const a=e.target.closest('a[data-jf-internal-id]');if(!a||!root.contains(a))return;if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;const id=a.dataset.jfInternalId||'';if(!id)return;e.preventDefault();e.stopPropagation();location.hash=detailsHash(id,sid);},true);
+}
+
+function renderFallback(body,imdbId){
+  body.innerHTML='';
+  const a=document.createElement('a');a.className='jf-ieg-link emby-button button-link';a.href='https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/ratings/';a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.textContent=CFG.title;body.appendChild(a);
+}
+
+function renderGrid(body,seasons,imdbId,sid,seriesName){
+  body.innerHTML='';
+  const inverted=getInv();
+  const allEpNums=[...new Set(seasons.flatMap(s=>s.episodes.map(e=>e.ep)).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+  const scroll=document.createElement('div');scroll.className='jf-ieg-scroll';
+  const grid=document.createElement('div');grid.className='jf-ieg-grid';
+  grid.style.gridTemplateColumns=inverted?'var(--c1) repeat('+allEpNums.length+', var(--c1))':'var(--c2) repeat('+seasons.length+', var(--c1))';
+
+  const corner=document.createElement('button');
+  corner.type='button';
+  corner.className='jf-ieg-cell jf-ieg-corner jf-ieg-corner-btn '+(inverted?'jf-ieg-corner-compact is-active':'jf-ieg-corner-wide');
+  corner.setAttribute('aria-label','Invert grid axes');
+  corner.innerHTML='<svg class="jf-ieg-corner-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2.5 4.5H11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8.5 2L11 4.5 8.5 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 11.5H5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 9L5 11.5 7.5 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  grid.appendChild(corner);
+
+  const mkSeason=s=>{
+    const a=document.createElement('a');
+    a.className='jf-ieg-cell jf-ieg-season';
+    a.textContent='S'+s.num;
+    a.title=(seriesName||CFG.title)+' - Saison '+String(s.num).padStart(2,'0');
+    a.dataset.jfAxisSeason=String(s.num);
+    if(s.seasonJfId&&sid){a.href=detailsUrl(s.seasonJfId,sid);a.dataset.jfInternalId=s.seasonJfId;a.classList.add('emby-button','button-link');}
+    else{a.href='https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/episodes/?season='+s.num;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.classList.add('emby-button','button-link');}
+    return a;
   };
 
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const mkEpHead=(n,sticky,compact)=>{
+    const d=document.createElement('div');
+    d.className='jf-ieg-cell jf-ieg-episode'+(compact?' jf-ieg-episode-compact':'')+(sticky?' jf-ieg-sticky-left':'');
+    d.textContent='E'+n;
+    d.dataset.jfAxisEpisode=String(n);
+    return d;
+  };
 
-  let scheduled = null;
-  let runSeq = 0;
-  let lastItemId = "";
-  const jellyfinLinkMapCache = new Map();
+  const mkGhost=()=>{const d=document.createElement('div');d.className='jf-ieg-cell jf-ieg-ghost';d.setAttribute('aria-hidden','true');return d;};
 
-  function log() {
-    if (CFG.debug) console.log.apply(console, ["[JF-IEG]"].concat(Array.from(arguments)));
-  }
+  const mkEmpty=(ep,snum)=>{
+    const a=document.createElement('a');a.className='jf-ieg-cell jf-ieg-empty';a.textContent='-';
+    if(ep.jfId&&sid){a.href=detailsUrl(ep.jfId,sid);a.dataset.jfInternalId=ep.jfId;a.classList.add('emby-button','button-link');bindCellHover(a,ep.jfId);}
+    else{a.href=ep.imdbEpId?('https://www.imdb.com/title/'+encodeURIComponent(ep.imdbEpId)+'/'):('https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/episodes/?season='+snum);a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.classList.add('emby-button','button-link');}
+    bindAxisHover(a,grid,snum,ep.ep);
+    return a;
+  };
 
-  function scheduleRun(delay) {
-    const d = typeof delay === "number" ? delay : 0;
-    if (scheduled) clearTimeout(scheduled);
-    scheduled = setTimeout(run, d);
-  }
+  const mkRate=(ep,snum)=>{
+    if(!ep||ep.exists!==true)return mkGhost();
+    if(toRating(ep.rating)==null)return mkEmpty(ep,snum);
+    const a=document.createElement('a');a.className='jf-ieg-cell jf-ieg-rating';a.textContent=Number(ep.rating).toFixed(1);a.style.cssText=ratingStyle(ep.rating);
+    if(ep.rating>=9.8)a.classList.add('jf-ieg-rating-98plus');
+    else if(ep.rating>=9.7)a.classList.add('jf-ieg-rating-97');
+    else if(ep.rating>=9.6)a.classList.add('jf-ieg-rating-96');
+    if(ep.jfId&&sid){a.href=detailsUrl(ep.jfId,sid);a.dataset.jfInternalId=ep.jfId;a.classList.add('emby-button','button-link');bindCellHover(a,ep.jfId);}
+    else{a.href=ep.imdbEpId?('https://www.imdb.com/title/'+encodeURIComponent(ep.imdbEpId)+'/'):('https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/episodes/?season='+snum);a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.classList.add('emby-button','button-link');}
+    bindAxisHover(a,grid,snum,ep.ep);
+    return a;
+  };
 
-  function injectStyle() {
-    if (document.getElementById(CFG.styleId)) return;
-
-    const style = document.createElement("style");
-    style.id = CFG.styleId;
-    style.textContent = `
-      [data-jf-ieg-root="1"]{
-        --jf-ieg-shell-bg: rgba(18,18,18,.26);
-        --jf-ieg-toggle-bg: rgba(255,255,255,.030);
-        --jf-ieg-toggle-hover-bg: rgba(255,255,255,.050);
-        --jf-ieg-panel-bg: rgba(0,0,0,.090);
-        --jf-ieg-body-bg: rgba(0,0,0,.060);
-        --jf-ieg-headcell-bg: rgba(255,255,255,.050);
-        --jf-ieg-headcell-hover-bg: rgba(255,255,255,.110);
-        margin:.85em 0 1.1em 0;
-        position:relative;
-        z-index:3;
-        clear:both;
-        width:100%;
-        max-width:calc(100% - 3.15rem);
-      }
-
-      @media (max-width:900px){
-        [data-jf-ieg-root="1"]{
-          max-width:calc(100% - .4rem);
-        }
-        .jf-ieg-body{
-          padding:.72rem .42rem .82rem .42rem !important;
-        }
-        .jf-ieg-scroll{
-          padding-right:.12rem !important;
-        }
-      }
-
-      .jf-ieg-box{
-        border-radius:12px;
-        overflow:hidden;
-        background:var(--jf-ieg-shell-bg);
-        border:1px solid rgba(255,255,255,.08);
-      }
-
-      .jf-ieg-toggle{
-        width:100%;
-        display:flex;
-        align-items:center;
-        justify-content:flex-start;
-        gap:.42rem;
-        border:0;
-        margin:0;
-        padding:.72rem .95rem;
-        cursor:pointer;
-        color:inherit;
-        background:var(--jf-ieg-toggle-bg);
-        text-align:left;
-        font:inherit;
-        outline:none !important;
-        box-shadow:none !important;
-        -webkit-tap-highlight-color:transparent;
-      }
-
-      .jf-ieg-toggle:hover{
-        background:var(--jf-ieg-toggle-hover-bg);
-      }
-
-      .jf-ieg-toggle:focus,
-      .jf-ieg-toggle:focus-visible{
-        outline:none !important;
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-toggle-label{
-        font-size:1.05rem;
-        font-weight:700;
-        line-height:1.2;
-      }
-
-      .jf-ieg-toggle-icon{
-        transition:transform .16s ease;
-        opacity:.92;
-        flex:0 0 auto;
-        margin-left:.02rem;
-      }
-
-      .jf-ieg-toggle[aria-expanded="true"] .jf-ieg-toggle-icon{
-        transform:rotate(180deg);
-      }
-
-      .jf-ieg-panel{
-        border-top:1px solid rgba(255,255,255,.08);
-        background:var(--jf-ieg-panel-bg);
-      }
-
-      .jf-ieg-panel[hidden]{
-        display:none !important;
-      }
-
-      .jf-ieg-body{
-        padding:.72rem .82rem .82rem .82rem;
-        background:var(--jf-ieg-body-bg);
-      }
-
-      .jf-ieg-status{
-        font-size:.92rem;
-        opacity:.9;
-        padding:.15rem .05rem;
-      }
-
-      .jf-ieg-link{
-        color:inherit !important;
-        text-decoration:none !important;
-        font-weight:700;
-        background:none !important;
-        border:0 !important;
-        box-shadow:none !important;
-        padding:0 !important;
-        min-height:0 !important;
-        outline:none !important;
-        -webkit-tap-highlight-color:transparent;
-      }
-
-      .jf-ieg-link:hover{
-        text-decoration:none !important;
-        opacity:.96;
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-link:focus,
-      .jf-ieg-link:focus-visible{
-        outline:none !important;
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-scroll{
-        position:relative;
-        overflow-x:auto;
-        overflow-y:hidden;
-        padding-bottom:.08rem;
-        padding-right:.55rem;
-        max-width:100%;
-      }
-
-      .jf-ieg-grid{
-        display:grid;
-        column-gap:.26rem;
-        row-gap:.26rem;
-        align-items:stretch;
-        min-width:max-content;
-      }
-
-      .jf-ieg-cell{
-        min-width:2.28rem;
-        min-height:2.36rem;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        text-align:center;
-        border-radius:8px;
-        box-sizing:border-box;
-        padding:.18rem .24rem;
-        line-height:1;
-        border:1px solid rgba(255,255,255,.08);
-        background:rgba(255,255,255,.03);
-        font-size:.86rem;
-      }
-
-      .jf-ieg-corner{
-        position:sticky;
-        left:0;
-        z-index:4;
-        visibility:hidden;
-        pointer-events:none;
-        border-color:transparent !important;
-        background:transparent !important;
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-season,
-      .jf-ieg-episode{
-        font-weight:700;
-        background:var(--jf-ieg-headcell-bg);
-        font-size:.89rem;
-        color:inherit !important;
-        text-decoration:none !important;
-        text-shadow:none !important;
-        filter:none !important;
-        outline:none !important;
-        -webkit-tap-highlight-color:transparent;
-        box-shadow:none !important;
-        border-color:rgba(255,255,255,.12);
-      }
-
-      .jf-ieg-season,
-      .jf-ieg-rating,
-      .jf-ieg-empty{
-        width:2.72rem;
-        min-width:2.72rem;
-        max-width:2.72rem;
-      }
-
-      .jf-ieg-season:hover{
-        background:var(--jf-ieg-headcell-hover-bg);
-        border-color:rgba(255,255,255,.24);
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-season:focus,
-      .jf-ieg-season:focus-visible{
-        outline:none !important;
-        box-shadow:none !important;
-        text-shadow:none !important;
-      }
-
-      .jf-ieg-episode{
-        min-width:3.05rem;
-        position:sticky;
-        left:0;
-        z-index:3;
-        background:var(--jf-ieg-headcell-bg) !important;
-        box-shadow:none !important;
-        border-color:rgba(255,255,255,.12);
-      }
-
-      .jf-ieg-rating{
-        color:#fff !important;
-        text-decoration:none !important;
-        font-weight:900;
-        font-size:1.28rem;
-        letter-spacing:-.03em;
-        font-variant-numeric:tabular-nums;
-        transition:filter .16s ease, border-color .16s ease, box-shadow .16s ease, text-shadow .16s ease;
-        text-shadow:
-          0 1px 0 rgba(0,0,0,.78),
-          0 0 1px rgba(0,0,0,.46),
-          0 0 2px rgba(0,0,0,.16);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.010), inset 0 -1px 0 rgba(0,0,0,.016) !important;
-        outline:none !important;
-        -webkit-tap-highlight-color:transparent;
-      }
-
-      .jf-ieg-rating:hover{
-        text-decoration:none !important;
-        filter:brightness(1.36) saturate(1.42) contrast(1.12);
-        border-color:rgba(255,255,255,.22);
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 1px 0 rgba(255,255,255,.04) !important;
-        text-shadow:
-          0 1px 0 rgba(0,0,0,.86),
-          0 0 1px rgba(0,0,0,.56),
-          0 0 3px rgba(255,255,255,.07);
-      }
-
-      .jf-ieg-rating:focus,
-      .jf-ieg-rating:focus-visible{
-        outline:none !important;
-      }
-
-      .jf-ieg-rating-rare-green,
-      .jf-ieg-rating-rare-gold{
-        filter:brightness(1.36) saturate(1.42) contrast(1.12);
-      }
-
-      .jf-ieg-rating-rare-green{
-        text-shadow:
-          0 1px 0 rgba(0,0,0,.86),
-          0 0 1px rgba(0,0,0,.56),
-          0 0 4px rgba(72,255,72,.30),
-          0 0 9px rgba(72,255,72,.18) !important;
-      }
-
-      .jf-ieg-rating-rare-gold{
-        text-shadow:
-          0 1px 0 rgba(0,0,0,.88),
-          0 0 1px rgba(0,0,0,.58),
-          0 0 4px rgba(255,240,28,.34),
-          0 0 9px rgba(255,240,28,.20) !important;
-      }
-
-      .jf-ieg-rating-rare-green:hover,
-      .jf-ieg-hover-cross.jf-ieg-rating-rare-green{
-        filter:brightness(1.36) saturate(1.42) contrast(1.12) !important;
-        text-shadow:
-          0 1px 0 rgba(0,0,0,.90),
-          0 0 1px rgba(0,0,0,.62),
-          0 0 6px rgba(72,255,72,.46),
-          0 0 13px rgba(72,255,72,.30),
-          0 0 22px rgba(72,255,72,.14) !important;
-      }
-
-      .jf-ieg-rating-rare-gold:hover,
-      .jf-ieg-hover-cross.jf-ieg-rating-rare-gold{
-        filter:brightness(1.36) saturate(1.42) contrast(1.12) !important;
-        text-shadow:
-          0 1px 0 rgba(0,0,0,.92),
-          0 0 1px rgba(0,0,0,.64),
-          0 0 6px rgba(255,240,28,.50),
-          0 0 13px rgba(255,240,28,.32),
-          0 0 22px rgba(255,240,28,.16) !important;
-      }
-
-      .jf-ieg-hover-axis.jf-ieg-season{
-        background:var(--jf-ieg-headcell-hover-bg) !important;
-        border-color:rgba(255,255,255,.34) !important;
-        color:#fff !important;
-        text-shadow:none !important;
-        filter:none !important;
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-hover-axis.jf-ieg-episode{
-        background:var(--jf-ieg-headcell-hover-bg) !important;
-        border-color:rgba(255,255,255,.34) !important;
-        color:#fff !important;
-        text-shadow:none !important;
-        filter:none !important;
-        box-shadow:none !important;
-      }
-
-      .jf-ieg-hover-cross.jf-ieg-rating{
-        filter:brightness(1.44) saturate(1.46) contrast(1.14);
-        border-color:rgba(255,255,255,.28);
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), inset 0 1px 0 rgba(255,255,255,.06) !important;
-      }
-
-      .jf-ieg-empty{
-        opacity:.15;
-        background:rgba(255,255,255,.02);
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function isDetailsRoute() {
-    const h = String(location.hash || "");
-    return h.includes("/details") && (h.includes("id=") || new URL(location.href).searchParams.get("id"));
-  }
-
-  function getItemIdFromUrl() {
-    const url = new URL(window.location.href);
-    const id = url.searchParams.get("id");
-    if (id) return id;
-    const hash = url.hash || "";
-    const m = hash.match(/[?&]id=([^&]+)/);
-    return m ? decodeURIComponent(m[1]) : null;
-  }
-
-  function getServerIdFromUrl() {
-    const url = new URL(window.location.href);
-    const direct = url.searchParams.get("serverId");
-    if (direct) return direct;
-    const hash = url.hash || "";
-    const m = hash.match(/[?&]serverId=([^&]+)/);
-    return m ? decodeURIComponent(m[1]) : "";
-  }
-
-  function getBaseUrl() {
-    return window.location.origin;
-  }
-
-  function getWebRootPath() {
-    const p = String(window.location.pathname || "");
-    const m = p.match(/^(.*\/web\/)(?:index\.html)?$/i);
-    if (m) return m[1];
-    return "/web/";
-  }
-
-  function buildJellyfinDetailsHash(itemId, serverId) {
-    return "/details?id=" + encodeURIComponent(itemId) + "&serverId=" + encodeURIComponent(serverId);
-  }
-
-  function buildJellyfinDetailsUrl(itemId, serverId) {
-    return window.location.origin + getWebRootPath() + "#" + buildJellyfinDetailsHash(itemId, serverId);
-  }
-
-  function navigateToJellyfinItem(itemId, serverId) {
-    if (!itemId || !serverId) return;
-    window.location.hash = buildJellyfinDetailsHash(itemId, serverId);
-  }
-
-  function getAccessToken() {
-    try {
-      const raw = localStorage.getItem("jellyfin_credentials");
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      const server = obj && obj.Servers && obj.Servers.find(function (s) { return s.AccessToken; });
-      return server ? server.AccessToken : null;
-    } catch {
-      return null;
+  if(!inverted){
+    for(const s of seasons)grid.appendChild(mkSeason(s));
+    for(const n of allEpNums){
+      grid.appendChild(mkEpHead(n,true,false));
+      for(const s of seasons)grid.appendChild(mkRate(s.episodes.find(e=>e.ep===n),s.num));
+    }
+  }else{
+    for(const n of allEpNums)grid.appendChild(mkEpHead(n,false,true));
+    for(const s of seasons){
+      const sh=mkSeason(s);sh.classList.add('jf-ieg-sticky-left');grid.appendChild(sh);
+      for(const n of allEpNums)grid.appendChild(mkRate(s.episodes.find(e=>e.ep===n),s.num));
     }
   }
 
-  function cacheGet(key) {
-    try {
-      const raw = sessionStorage.getItem(key);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      if (Date.now() > obj.expires) return null;
-      return obj.value;
-    } catch {
-      return null;
-    }
+  corner.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setInv(!getInv());renderGrid(body,seasons,imdbId,sid,seriesName);});
+  scroll.appendChild(grid);body.appendChild(scroll);bindInternalNav(scroll,sid);
+}
+
+async function loadPanel(root){
+  if(root.dataset.loaded==='1'||root.dataset.loading==='1')return;
+  root.dataset.loading='1';
+  const body=q('.jf-ieg-body',root);if(!body){root.dataset.loading='0';return;}
+  body.innerHTML='<div class="jf-ieg-status">Loading…</div>';
+  try{
+    const imdbId=root.dataset.imdbId,seriesId=root.dataset.itemId,sid=root.dataset.serverId||'',seriesName=root.dataset.seriesName||'';
+    const [jf,ds]=await Promise.all([fetchJf(seriesId).catch(()=>({seasonsByNum:{},seasonIds:{}})),fetchDataset(imdbId).catch(()=>null)]);
+    const seasons=mergeData(ds,jf);
+    body.innerHTML='';
+    if(!seasons.length||!seasons.some(s=>s.episodes.some(e=>e.rating!=null||e.name||e.jfId)))renderFallback(body,imdbId);else renderGrid(body,seasons,imdbId,sid,seriesName);
+    root.dataset.loaded='1';
+  }catch(e){
+    console.warn('[JF-IEG] Panel load failed',e);
+    renderFallback(body,root.dataset.imdbId);
+    root.dataset.loaded='1';
+  }finally{root.dataset.loading='0';}
+}
+
+function createBlock(itemId,imdbId,sid,seriesName){
+  const root=document.createElement('section');
+  root.setAttribute('data-jf-ieg-root','1');
+  root.dataset.itemId=itemId;root.dataset.imdbId=imdbId;root.dataset.serverId=sid||'';root.dataset.seriesName=seriesName||'';root.dataset.loaded='0';root.dataset.loading='0';
+  root.innerHTML='<div class="jf-ieg-box"><button type="button" class="jf-ieg-toggle" aria-expanded="false"><span class="jf-ieg-toggle-label">'+CFG.title+'</span><span class="material-icons jf-ieg-toggle-icon" aria-hidden="true">expand_more</span></button><div class="jf-ieg-panel" hidden><div class="jf-ieg-body"></div></div></div>';
+  const t=q('.jf-ieg-toggle',root),p=q('.jf-ieg-panel',root);
+  t.addEventListener('click',()=>{const ex=t.getAttribute('aria-expanded')==='true',nx=!ex;t.setAttribute('aria-expanded',nx?'true':'false');p.hidden=!nx;if(nx)loadPanel(root);});
+  return root;
+}
+
+const currentBlock=id=>qa(CFG.root).find(el=>el.dataset.itemId===id)||null;
+const cleanup=id=>qa(CFG.root).forEach(el=>{if(el.dataset.itemId!==id)el.remove();});
+const removeAll=()=>qa(CFG.root).forEach(el=>el.remove());
+const findInsertTarget=()=>{const cast=best(qa('#castCollapsible'));if(cast&&cast.parentNode)return{parent:cast.parentNode,before:cast};const ph=best(qa('#peopleHeader'));const sec=ph?ph.closest('.verticalSection, .detailVerticalSection, .emby-scroller-container'):null;return sec&&sec.parentNode&&visible(sec)?{parent:sec.parentNode,before:sec}:null;};
+const findOfficialImdbLink=id=>id?best(qa('a[href*="imdb.com/title/"]').filter(a=>a.isConnected&&!a.closest(CFG.root)&&visible(a)&&((a.getAttribute('href')||'').match(/imdb\.com\/(?:[a-z]{2}\/)?title\/(tt\d+)/i)||[])[1]===id)):null;
+
+function ensureMounted(itemId,imdbId,sid,seriesName,target){
+  cleanup(itemId);
+  let block=currentBlock(itemId);
+  if(block&&(block.dataset.imdbId!==imdbId||block.dataset.serverId!==sid)){block.remove();block=null;}
+  if(!block){block=createBlock(itemId,imdbId,sid,seriesName);target.parent.insertBefore(block,target.before);}
+  else if(block.nextSibling!==target.before)target.parent.insertBefore(block,target.before);
+}
+
+async function run(){
+  const seq=++runSeq;injectStyle();
+  if(!isDetails()){burst.forEach(clearTimeout);burst=[];removeAll();hideTooltip();return;}
+  const itemId=itemIdFromUrl();if(!itemId)return;
+  let item;try{item=await fetchItem(itemId);}catch{return;}
+  if(seq!==runSeq||!item)return;
+  if(item.Type!=='Series'){removeAll();hideTooltip();return;}
+  const imdbId=imdbFromItem(item);if(!imdbId){removeAll();hideTooltip();return;}
+  const sid=serverIdFromUrl();if(!sid)return;
+  const existing=currentBlock(itemId);
+  if(existing&&existing.dataset.imdbId===imdbId&&existing.dataset.serverId===sid&&existing.isConnected&&visible(existing))return;
+  const started=Date.now();let target=null;
+  while(Date.now()-started<CFG.maxWaitMs){
+    if(seq!==runSeq)return;
+    if(itemIdFromUrl()!==itemId)return;
+    target=findInsertTarget();
+    const hasLink=findOfficialImdbLink(imdbId);
+    if(target&&hasLink)break;
+    if(target&&Date.now()-started>=CFG.readyAnchorWaitMs)break;
+    await sleep(100);
   }
+  if(seq!==runSeq||!target)return;
+  ensureMounted(itemId,imdbId,sid,item.Name||'',target);
+}
 
-  function cacheSet(key, value, ttlMs) {
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ value: value, expires: Date.now() + ttlMs }));
-    } catch {}
-  }
+window.addEventListener('hashchange',()=>{hideTooltip();scheduleRun(0);},true);
+window.addEventListener('popstate',()=>{hideTooltip();scheduleRun(0);},true);
+document.addEventListener('viewshow',()=>{hideTooltip();scheduleRun(0);},true);
+document.addEventListener('viewbeforeshow',()=>{hideTooltip();scheduleRun(0);},true);
 
-  async function fetchApiJson(path) {
-    const token = getAccessToken();
-    if (!token) return null;
+if(document.body)new MutationObserver(()=>{if(!isDetails())return;const id=itemIdFromUrl()||'';if(!id)return;const b=currentBlock(id);if(!b||!b.isConnected||!visible(b))scheduleRun(CFG.reapplyDelayMs);}).observe(document.body,{childList:true,subtree:true});
 
-    const res = await fetch(getBaseUrl() + path, {
-      headers: { "X-Emby-Token": token }
-    });
-    if (!res.ok) return null;
-    return res.json();
-  }
+setInterval(()=>{if(!isDetails())return;const id=itemIdFromUrl()||'',b=id?currentBlock(id):null;if(id&&id!==lastItemId){lastItemId=id;scheduleBurst([0,350,900]);return;}if(id&&(!b||!b.isConnected||!visible(b)))scheduleRun(CFG.reapplyDelayMs);},CFG.watchDogMs);
 
-  async function fetchItem(itemId) {
-    const cacheKey = "ieg_item_" + itemId;
-    const cached = cacheGet(cacheKey);
-    if (cached) return cached;
-
-    const data = await fetchApiJson("/Items/" + itemId + "?Fields=ProviderIds");
-    if (!data) return null;
-
-    cacheSet(cacheKey, data, CFG.itemTtlMs);
-    return data;
-  }
-
-  async function fetchDataset(imdbId) {
-    const cacheKey = "ieg_dataset_" + imdbId;
-    const cached = cacheGet(cacheKey);
-    if (cached !== null) return cached;
-
-    const res = await fetch(
-      "https://raw.githubusercontent.com/mokronos/imdb-heatmap/main/data/" + encodeURIComponent(imdbId) + ".json",
-      { credentials: "omit" }
-    );
-
-    if (res.status === 404) {
-      cacheSet(cacheKey, null, CFG.datasetTtlMs);
-      return null;
-    }
-
-    if (!res.ok) throw new Error("Dataset HTTP " + res.status);
-
-    const data = await res.json();
-    const finalData = Array.isArray(data) && data.length ? data : null;
-    cacheSet(cacheKey, finalData, CFG.datasetTtlMs);
-    return finalData;
-  }
-
-  function normalizeImdbId(id) {
-    const s = String(id || "").trim();
-    if (!s) return "";
-    return s.indexOf("tt") === 0 ? s : "tt" + s;
-  }
-
-  function getProviderId(item, wantedKey) {
-    const ids = item && item.ProviderIds;
-    if (!ids) return "";
-    const target = String(wantedKey).toLowerCase();
-    for (const k of Object.keys(ids)) {
-      if (String(k).toLowerCase() === target) return String(ids[k] || "");
-    }
-    return "";
-  }
-
-  function getItemImdbId(item) {
-    return normalizeImdbId(getProviderId(item, "imdb"));
-  }
-
-  function buildSeriesRatingsLink(seriesImdbId) {
-    return "https://www.imdb.com/fr/title/" + encodeURIComponent(seriesImdbId) + "/ratings/";
-  }
-
-  function buildSeasonLink(seriesImdbId, seasonNumber) {
-    return "https://www.imdb.com/title/" + encodeURIComponent(seriesImdbId) + "/episodes/?season=" + encodeURIComponent(seasonNumber);
-  }
-
-  function decorateExternalLink(a, extraClass) {
-    if (!a) return;
-    a.setAttribute("target", "_blank");
-    a.setAttribute("rel", "noopener noreferrer");
-    a.setAttribute("is", "emby-linkbutton");
-    a.setAttribute("data-imdb-processed", "true");
-    a.classList.add("button-link", "emby-button");
-    if (extraClass) a.classList.add(extraClass);
-  }
-
-  function decorateInternalLink(a, extraClass) {
-    if (!a) return;
-    a.removeAttribute("target");
-    a.removeAttribute("rel");
-    a.removeAttribute("is");
-    a.removeAttribute("data-imdb-processed");
-    a.classList.add("button-link", "emby-button");
-    if (extraClass) a.classList.add(extraClass);
-  }
-
-  function isElementVisible(el) {
-    if (!el || !el.isConnected) return false;
-    const cs = getComputedStyle(el);
-    if (cs.display === "none" || cs.visibility === "hidden" || cs.opacity === "0") return false;
-    const r = el.getBoundingClientRect();
-    if (r.width <= 2 || r.height <= 2) return false;
-    return true;
-  }
-
-  function pickBestVisible(elements) {
-    if (!elements.length) return null;
-
-    let best = null;
-    let bestArea = 0;
-
-    for (const el of elements) {
-      if (!isElementVisible(el)) continue;
-      const r = el.getBoundingClientRect();
-      const area = r.width * r.height;
-      if (area > bestArea) {
-        bestArea = area;
-        best = el;
-      }
-    }
-
-    return best || elements[elements.length - 1] || null;
-  }
-
-  function findVisibleCastSection() {
-    return pickBestVisible(Array.from(document.querySelectorAll("#castCollapsible")));
-  }
-
-  function findVisiblePeopleHeader() {
-    return pickBestVisible(Array.from(document.querySelectorAll("#peopleHeader")));
-  }
-
-  function findInsertTarget() {
-    const castSection = findVisibleCastSection();
-    if (castSection && castSection.parentNode) {
-      return { parent: castSection.parentNode, before: castSection };
-    }
-
-    const peopleHeader = findVisiblePeopleHeader();
-    const peopleSection = peopleHeader ? peopleHeader.closest(".verticalSection, .detailVerticalSection, .emby-scroller-container") : null;
-    if (peopleSection && peopleSection.parentNode && isElementVisible(peopleSection)) {
-      return { parent: peopleSection.parentNode, before: peopleSection };
-    }
-
-    return null;
-  }
-
-  function findVisibleOfficialImdbLink(imdbId) {
-    if (!imdbId) return null;
-
-    const all = Array.from(document.querySelectorAll('a[href*="imdb.com/title/"]'));
-    const filtered = all.filter(function (a) {
-      if (!a || !a.isConnected) return false;
-      if (a.closest(CFG.rootSelector)) return false;
-      if (!isElementVisible(a)) return false;
-
-      const href = String(a.getAttribute("href") || a.href || "");
-      const m = href.match(/imdb\.com\/(?:[a-z]{2}\/)?title\/(tt\d+)/i);
-      if (!m) return false;
-
-      return m[1] === imdbId;
-    });
-
-    return pickBestVisible(filtered);
-  }
-
-  function findCurrentBlock(itemId) {
-    const all = Array.from(document.querySelectorAll(CFG.rootSelector));
-    return all.find(function (el) { return el.dataset.itemId === itemId; }) || null;
-  }
-
-  function cleanupForeignBlocks(currentItemId) {
-    Array.from(document.querySelectorAll(CFG.rootSelector)).forEach(function (el) {
-      if (el.dataset.itemId !== currentItemId) el.remove();
-    });
-  }
-
-  function removeAllBlocks() {
-    Array.from(document.querySelectorAll(CFG.rootSelector)).forEach(function (el) {
-      el.remove();
-    });
-  }
-
-  function renderFallback(container, seriesImdbId) {
-    container.innerHTML = "";
-    const link = document.createElement("a");
-    link.href = buildSeriesRatingsLink(seriesImdbId);
-    link.textContent = CFG.title;
-    decorateExternalLink(link, "jf-ieg-link");
-    container.appendChild(link);
-  }
-
-  function renderLoading(container) {
-    container.innerHTML = '<div class="jf-ieg-status">Loading…</div>';
-  }
-
-  function getEpisodeNumbers(data) {
-    const set = new Set();
-
-    data.forEach(function (season) {
-      if (!Array.isArray(season)) return;
-      season.forEach(function (ep) {
-        const n = Number(ep && ep.episode);
-        if (Number.isFinite(n)) set.add(n);
-      });
-    });
-
-    return Array.from(set).sort(function (a, b) { return a - b; });
-  }
-
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
-  }
-
-  function getRegularHighStyle(rr) {
-    const key = rr.toFixed(1);
-
-    const map = {
-      "7.0": [32, 88, 20.0, 0.840],
-      "7.1": [36, 89, 20.8, 0.844],
-      "7.2": [40, 90, 21.6, 0.848],
-      "7.3": [44, 91, 22.4, 0.852],
-      "7.4": [48, 92, 23.2, 0.856],
-      "7.5": [54, 93, 24.2, 0.860],
-      "7.6": [60, 94, 25.2, 0.864],
-      "7.7": [66, 95, 26.4, 0.868],
-      "7.8": [72, 96, 27.8, 0.872],
-      "7.9": [78, 97, 29.2, 0.876],
-      "8.0": [84, 98, 30.6, 0.880],
-      "8.1": [90, 99, 32.0, 0.884],
-      "8.2": [96, 100, 33.6, 0.889],
-      "8.3": [100, 100, 35.2, 0.894],
-      "8.4": [103, 100, 37.0, 0.899],
-      "8.5": [106, 100, 39.0, 0.905],
-      "8.6": [109, 100, 41.3, 0.912],
-      "8.7": [112, 100, 43.0, 0.918],
-      "8.8": [115, 100, 45.0, 0.927],
-      "8.9": [118, 100, 46.0, 0.936],
-      "9.0": [120, 100, 45.0, 0.945],
-      "9.1": [121, 100, 46.0, 0.954],
-      "9.2": [122, 100, 47.0, 0.963],
-      "9.3": [123, 100, 48.0, 0.975],
-      "9.4": [124, 100, 49.0, 0.987],
-      "9.5": [124, 100, 50.0, 0.999],
-      "9.6": [124, 100, 53.0, 0.999],
-      "9.7": [110, 100, 52.0, 0.999],
-      "9.8": [92, 100, 51.5, 0.999],
-      "9.9": [72, 100, 51.0, 0.999],
-      "10.0": [60, 100, 50.5, 0.999]
-    };
-
-    const glowMap = {
-      "9.5": {
-        glowA: "rgba(64,255,96,.13)",
-        glowB: "rgba(64,255,96,.07)",
-        textGlow1: "rgba(64,255,96,.24)",
-        textGlow2: "rgba(64,255,96,.14)",
-        blurA: 4,
-        blurB: 8,
-        insetA: "rgba(255,255,255,.06)",
-        borderAlpha: 0.32
-      },
-      "9.6": {
-        glowA: "rgba(72,255,72,.18)",
-        glowB: "rgba(72,255,72,.10)",
-        textGlow1: "rgba(72,255,72,.30)",
-        textGlow2: "rgba(72,255,72,.18)",
-        blurA: 5,
-        blurB: 10,
-        insetA: "rgba(255,255,255,.07)",
-        borderAlpha: 0.34
-      },
-      "9.7": {
-        glowA: "rgba(196,255,56,.17)",
-        glowB: "rgba(196,255,56,.09)",
-        textGlow1: "rgba(196,255,56,.27)",
-        textGlow2: "rgba(196,255,56,.16)",
-        blurA: 6,
-        blurB: 11,
-        insetA: "rgba(255,255,255,.07)",
-        borderAlpha: 0.35
-      },
-      "9.8": {
-        glowA: "rgba(255,245,40,.19)",
-        glowB: "rgba(255,245,40,.10)",
-        textGlow1: "rgba(255,245,40,.32)",
-        textGlow2: "rgba(255,245,40,.18)",
-        blurA: 7,
-        blurB: 13,
-        insetA: "rgba(255,255,255,.075)",
-        borderAlpha: 0.36
-      },
-      "9.9": {
-        glowA: "rgba(255,240,28,.22)",
-        glowB: "rgba(255,240,28,.12)",
-        textGlow1: "rgba(255,240,28,.36)",
-        textGlow2: "rgba(255,240,28,.20)",
-        blurA: 8,
-        blurB: 15,
-        insetA: "rgba(255,255,255,.08)",
-        borderAlpha: 0.38
-      },
-      "10.0": {
-        glowA: "rgba(255,236,18,.25)",
-        glowB: "rgba(255,236,18,.14)",
-        textGlow1: "rgba(255,236,18,.40)",
-        textGlow2: "rgba(255,236,18,.24)",
-        blurA: 9,
-        blurB: 17,
-        insetA: "rgba(255,255,255,.085)",
-        borderAlpha: 0.40
-      }
-    };
-
-    const cfg = map[key] || map["7.0"];
-    const h = cfg[0];
-    const s = cfg[1];
-    const l = cfg[2];
-    const a = cfg[3];
-
-    let borderL = Math.min(l + 5, 74);
-    let boxShadow = "inset 0 1px 0 rgba(255,255,255,.015), inset 0 -1px 0 rgba(0,0,0,.02)";
-    let textShadow = "0 1px 0 rgba(0,0,0,.72), 0 0 1px rgba(0,0,0,.32)";
-    let borderAlpha = 0.22;
-
-    if (glowMap[key]) {
-      const g = glowMap[key];
-      boxShadow = [
-        "0 0 " + g.blurA + "px " + g.glowA,
-        "0 0 " + g.blurB + "px " + g.glowB,
-        "inset 0 0 0 1px rgba(255,255,255,.06)",
-        "inset 0 1px 0 " + g.insetA,
-        "inset 0 -1px 0 rgba(0,0,0,.03)"
-      ].join(", ");
-      textShadow = [
-        "0 1px 0 rgba(0,0,0,.84)",
-        "0 0 1px rgba(0,0,0,.52)",
-        "0 0 4px " + g.textGlow1,
-        "0 0 8px " + g.textGlow2
-      ].join(", ");
-      borderL = Math.min(borderL + 5, 84);
-      borderAlpha = g.borderAlpha;
-    }
-
-    return [
-      "background:hsla(" + h + "," + s + "%," + l + "%," + a + ")",
-      "border-color:hsla(" + h + "," + s + "%," + borderL + "%," + borderAlpha + ")",
-      "color:#fff !important",
-      "text-shadow:" + textShadow,
-      "box-shadow:" + boxShadow
-    ].join(";");
-  }
-
-  function getLowStyle(rr) {
-    let h, s, l, a;
-
-    if (rr < 4.0) {
-      const t = clamp(rr / 4.0, 0, 1);
-      h = 0 + (10 - 0) * t;
-      s = 14 + (44 - 14) * t;
-      l = 5 + (10 - 5) * t;
-      a = 0.94 + (0.89 - 0.94) * t;
-    } else if (rr < 6.0) {
-      const t = clamp((rr - 4.0) / 2.0, 0, 1);
-      h = 10 + (20 - 10) * t;
-      s = 44 + (70 - 44) * t;
-      l = 10 + (17 - 10) * t;
-      a = 0.89 + (0.85 - 0.89) * t;
-    } else {
-      const t = clamp((rr - 6.0) / 1.0, 0, 1);
-      h = 20 + (31 - 20) * t;
-      s = 70 + (84 - 70) * t;
-      l = 17 + (20.5 - 17) * t;
-      a = 0.85 + (0.84 - 0.85) * t;
-    }
-
-    const borderL = clamp(l + 9, 15, 70);
-
-    return [
-      "background:hsla(" + h + "," + s + "%," + l + "%," + a + ")",
-      "border-color:hsla(" + h + "," + Math.max(70, s) + "%," + borderL + "%,.22)",
-      "color:#fff !important",
-      "text-shadow:0 1px 0 rgba(0,0,0,.58), 0 0 1px rgba(0,0,0,.14)"
-    ].join(";");
-  }
-
-  function getRatingStyle(rating) {
-    const r = Number(rating);
-    if (!Number.isFinite(r)) return "background:rgba(255,255,255,.03);";
-
-    const rr = Math.round(r * 10) / 10;
-    if (rr >= 7.0) return getRegularHighStyle(rr);
-    return getLowStyle(rr);
-  }
-
-  function clearGridHover(grid) {
-    if (!grid || !grid._jfHoverNodes || !grid._jfHoverNodes.length) {
-      if (grid) {
-        grid._jfHoverNodes = [];
-        grid._jfHoverKey = "";
-      }
-      return;
-    }
-
-    grid._jfHoverNodes.forEach(function (el) {
-      el.classList.remove("jf-ieg-hover-axis", "jf-ieg-hover-cross");
-    });
-
-    grid._jfHoverNodes = [];
-    grid._jfHoverKey = "";
-  }
-
-  function setGridHover(grid, seasonIndex, episodeIndex) {
-    const key = seasonIndex + "|" + episodeIndex;
-    if (grid._jfHoverKey === key) return;
-
-    clearGridHover(grid);
-
-    const nodes = [];
-
-    const seasonHeader = grid.querySelector('.jf-ieg-season[data-season-index="' + seasonIndex + '"]');
-    const episodeHeader = grid.querySelector('.jf-ieg-episode[data-episode-index="' + episodeIndex + '"]');
-    const cross = grid.querySelector('.jf-ieg-rating[data-season-index="' + seasonIndex + '"][data-episode-index="' + episodeIndex + '"]');
-
-    if (seasonHeader) {
-      seasonHeader.classList.add("jf-ieg-hover-axis");
-      nodes.push(seasonHeader);
-    }
-
-    if (episodeHeader) {
-      episodeHeader.classList.add("jf-ieg-hover-axis");
-      nodes.push(episodeHeader);
-    }
-
-    if (cross) {
-      cross.classList.add("jf-ieg-hover-cross");
-      nodes.push(cross);
-    }
-
-    grid._jfHoverNodes = nodes;
-    grid._jfHoverKey = key;
-  }
-
-  function bindGridHover(grid) {
-    grid.addEventListener("mouseover", function (e) {
-      const cell = e.target.closest(".jf-ieg-rating");
-      if (!cell || !grid.contains(cell)) return;
-      setGridHover(grid, cell.dataset.seasonIndex, cell.dataset.episodeIndex);
-    });
-
-    grid.addEventListener("mouseleave", function () {
-      clearGridHover(grid);
-    });
-
-    grid.addEventListener("focusin", function (e) {
-      const cell = e.target.closest(".jf-ieg-rating");
-      if (!cell || !grid.contains(cell)) return;
-      setGridHover(grid, cell.dataset.seasonIndex, cell.dataset.episodeIndex);
-    });
-
-    grid.addEventListener("focusout", function (e) {
-      if (!grid.contains(e.relatedTarget)) clearGridHover(grid);
-    });
-  }
-
-  async function fetchJellyfinLinkMap(seriesId) {
-    if (jellyfinLinkMapCache.has(seriesId)) {
-      return jellyfinLinkMapCache.get(seriesId);
-    }
-
-    const promise = (async function () {
-      const seasonsRes = await fetchApiJson(
-        "/Shows/" + encodeURIComponent(seriesId) + "/Seasons?Fields=ProviderIds&EnableImages=false&EnableUserData=false"
-      );
-
-      const episodesRes = await fetchApiJson(
-        "/Shows/" + encodeURIComponent(seriesId) + "/Episodes?Fields=ProviderIds&EnableImages=false&EnableUserData=false&Limit=20000"
-      );
-
-      const seasons = seasonsRes && Array.isArray(seasonsRes.Items) ? seasonsRes.Items : [];
-      const episodes = episodesRes && Array.isArray(episodesRes.Items) ? episodesRes.Items : [];
-
-      const seasonByNumber = Object.create(null);
-      const episodeByKey = Object.create(null);
-      const episodeByImdb = Object.create(null);
-
-      seasons.forEach(function (item) {
-        const n = Number(item && item.IndexNumber);
-        if (Number.isFinite(n)) {
-          seasonByNumber[n] = item;
-        }
-      });
-
-      episodes.forEach(function (item) {
-        const seasonNumber = Number(item && item.ParentIndexNumber);
-        const episodeNumber = Number(item && item.IndexNumber);
-
-        if (Number.isFinite(seasonNumber) && Number.isFinite(episodeNumber)) {
-          const key = seasonNumber + "|" + episodeNumber;
-          if (!episodeByKey[key]) episodeByKey[key] = [];
-          episodeByKey[key].push(item);
-        }
-
-        const imdbId = getItemImdbId(item);
-        if (imdbId && !episodeByImdb[imdbId]) {
-          episodeByImdb[imdbId] = item;
-        }
-      });
-
-      return {
-        seasonByNumber: seasonByNumber,
-        episodeByKey: episodeByKey,
-        episodeByImdb: episodeByImdb
-      };
-    })();
-
-    jellyfinLinkMapCache.set(seriesId, promise);
-    return promise;
-  }
-
-  function resolveEpisodeOrSeasonTarget(linkMap, seasonNumber, episodeNumber, imdbEpisodeId) {
-    const seasonItem = linkMap && linkMap.seasonByNumber ? linkMap.seasonByNumber[seasonNumber] : null;
-    const normalizedImdb = normalizeImdbId(imdbEpisodeId);
-
-    if (normalizedImdb && linkMap && linkMap.episodeByImdb && linkMap.episodeByImdb[normalizedImdb]) {
-      return { type: "episode", item: linkMap.episodeByImdb[normalizedImdb] };
-    }
-
-    const key = seasonNumber + "|" + episodeNumber;
-    const candidates = linkMap && linkMap.episodeByKey && linkMap.episodeByKey[key] ? linkMap.episodeByKey[key] : [];
-
-    if (candidates.length === 1) {
-      return { type: "episode", item: candidates[0] };
-    }
-
-    if (candidates.length === 0 && seasonItem) {
-      return { type: "season", item: seasonItem };
-    }
-
-    return null;
-  }
-
-  function resolveSeasonTarget(linkMap, seasonNumber) {
-    const seasonItem = linkMap && linkMap.seasonByNumber ? linkMap.seasonByNumber[seasonNumber] : null;
-    return seasonItem ? { type: "season", item: seasonItem } : null;
-  }
-
-  function applyResolvedTargetLink(a, resolvedTarget, serverId) {
-    if (!a || !resolvedTarget || !resolvedTarget.item || !resolvedTarget.item.Id || !serverId) return false;
-
-    a.href = buildJellyfinDetailsUrl(resolvedTarget.item.Id, serverId);
-    a.dataset.jfInternalId = resolvedTarget.item.Id;
-    decorateInternalLink(a);
-    return true;
-  }
-
-  function bindInternalSameTabNav(grid, serverId) {
-    if (!grid || !serverId) return;
-
-    grid.addEventListener("click", function (e) {
-      const a = e.target.closest("a[data-jf-internal-id]");
-      if (!a || !grid.contains(a)) return;
-      if (e.defaultPrevented) return;
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      if (e.button !== 0) return;
-
-      const itemId = a.dataset.jfInternalId || "";
-      if (!itemId) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-      navigateToJellyfinItem(itemId, serverId);
-    }, true);
-  }
-
-  function buildGridElement(seriesImdbId, data, seriesId, serverId, linkMap) {
-    const seasonCount = data.length;
-    const episodeNumbers = getEpisodeNumbers(data);
-    const cols = "3.05rem repeat(" + seasonCount + ", 2.72rem)";
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "jf-ieg-scroll";
-
-    const grid = document.createElement("div");
-    grid.className = "jf-ieg-grid";
-    grid.style.gridTemplateColumns = cols;
-
-    const corner = document.createElement("div");
-    corner.className = "jf-ieg-cell jf-ieg-corner";
-    corner.innerHTML = "&nbsp;";
-    grid.appendChild(corner);
-
-    for (let s = 0; s < seasonCount; s++) {
-      const seasonNumber = s + 1;
-      const seasonCell = document.createElement("a");
-      seasonCell.className = "jf-ieg-cell jf-ieg-season";
-      seasonCell.textContent = "S" + seasonNumber;
-      seasonCell.href = buildSeasonLink(seriesImdbId, seasonNumber);
-      seasonCell.title = "IMDb season " + seasonNumber;
-      seasonCell.dataset.seasonIndex = String(seasonNumber);
-      decorateExternalLink(seasonCell);
-
-      const resolvedSeason = resolveSeasonTarget(linkMap, seasonNumber);
-      applyResolvedTargetLink(seasonCell, resolvedSeason, serverId);
-
-      grid.appendChild(seasonCell);
-    }
-
-    for (const epNum of episodeNumbers) {
-      const epCell = document.createElement("div");
-      epCell.className = "jf-ieg-cell jf-ieg-episode";
-      epCell.textContent = "E" + epNum;
-      epCell.dataset.episodeIndex = String(epNum);
-      grid.appendChild(epCell);
-
-      for (let s = 0; s < seasonCount; s++) {
-        const seasonNumber = s + 1;
-        const season = Array.isArray(data[s]) ? data[s] : [];
-        const ep = season.find(function (x) { return Number(x && x.episode) === epNum; });
-
-        if (!ep || !Number.isFinite(Number(ep.rating))) {
-          const empty = document.createElement("div");
-          empty.className = "jf-ieg-cell jf-ieg-empty";
-          empty.dataset.seasonIndex = String(seasonNumber);
-          empty.dataset.episodeIndex = String(epNum);
-          grid.appendChild(empty);
-          continue;
-        }
-
-        const a = document.createElement("a");
-        a.className = "jf-ieg-cell jf-ieg-rating";
-        a.textContent = Number(ep.rating).toFixed(1);
-        a.style.cssText = getRatingStyle(ep.rating);
-
-        const roundedRating = Math.round(Number(ep.rating) * 10) / 10;
-        if (roundedRating >= 9.8) {
-          a.classList.add("jf-ieg-rating-rare-gold");
-        } else if (roundedRating >= 9.5) {
-          a.classList.add("jf-ieg-rating-rare-green");
-        }
-
-        const seasonLabelNum = String(seasonNumber).padStart(2, "0");
-        const episodeLabelNum = String(epNum).padStart(2, "0");
-        a.title = "S" + seasonLabelNum + "E" + episodeLabelNum + " • IMDb";
-
-        a.dataset.seasonIndex = String(seasonNumber);
-        a.dataset.episodeIndex = String(epNum);
-        a.dataset.imdbEpisodeId = normalizeImdbId(ep.id || "");
-        a.href = ep.id
-          ? "https://www.imdb.com/title/" + encodeURIComponent(ep.id) + "/"
-          : buildSeasonLink(seriesImdbId, seasonNumber);
-
-        decorateExternalLink(a);
-
-        const resolved = resolveEpisodeOrSeasonTarget(linkMap, seasonNumber, epNum, ep.id || "");
-        applyResolvedTargetLink(a, resolved, serverId);
-
-        grid.appendChild(a);
-      }
-    }
-
-    bindGridHover(grid);
-    bindInternalSameTabNav(grid, serverId);
-    wrapper.appendChild(grid);
-    return wrapper;
-  }
-
-  async function ensurePanelLoaded(root, imdbId) {
-    if (root.dataset.loaded === "1" || root.dataset.loading === "1") return;
-
-    const body = root.querySelector(".jf-ieg-body");
-    if (!body) return;
-
-    root.dataset.loading = "1";
-    renderLoading(body);
-
-    try {
-      const seriesId = root.dataset.itemId || "";
-      const serverId = root.dataset.serverId || "";
-
-      const promises = [fetchDataset(imdbId)];
-      if (seriesId) {
-        promises.push(
-          fetchJellyfinLinkMap(seriesId).catch(function (err) {
-            log("background jellyfin link map preload failed", err);
-            return null;
-          })
-        );
-      } else {
-        promises.push(Promise.resolve(null));
-      }
-
-      const results = await Promise.all(promises);
-      const data = results[0];
-      const linkMap = results[1];
-
-      body.innerHTML = "";
-
-      if (!Array.isArray(data) || !data.length) {
-        renderFallback(body, imdbId);
-        root.dataset.loaded = "1";
-        return;
-      }
-
-      body.appendChild(buildGridElement(imdbId, data, seriesId, serverId, linkMap));
-      root.dataset.loaded = "1";
-    } catch (err) {
-      log("ensurePanelLoaded failed", err);
-      renderFallback(body, imdbId);
-      root.dataset.loaded = "1";
-    } finally {
-      root.dataset.loading = "0";
-    }
-  }
-
-  function createBlock(itemId, imdbId, serverId) {
-    const root = document.createElement("section");
-    root.setAttribute("data-jf-ieg-root", "1");
-    root.dataset.itemId = itemId;
-    root.dataset.imdbId = imdbId;
-    root.dataset.serverId = serverId || "";
-    root.dataset.loaded = "0";
-    root.dataset.loading = "0";
-
-    root.innerHTML = `
-      <div class="jf-ieg-box">
-        <button type="button" class="jf-ieg-toggle" aria-expanded="false">
-          <span class="jf-ieg-toggle-label">${CFG.title}</span>
-          <span class="material-icons jf-ieg-toggle-icon" aria-hidden="true">expand_more</span>
-        </button>
-        <div class="jf-ieg-panel" hidden>
-          <div class="jf-ieg-body"></div>
-        </div>
-      </div>
-    `;
-
-    const toggle = root.querySelector(".jf-ieg-toggle");
-    const panel = root.querySelector(".jf-ieg-panel");
-
-    toggle.addEventListener("click", async function () {
-      const expanded = toggle.getAttribute("aria-expanded") === "true";
-      const next = !expanded;
-
-      toggle.setAttribute("aria-expanded", next ? "true" : "false");
-      panel.hidden = !next;
-
-      if (next) {
-        await ensurePanelLoaded(root, imdbId);
-      }
-    });
-
-    return root;
-  }
-
-  function ensureMounted(itemId, imdbId, serverId, target) {
-    cleanupForeignBlocks(itemId);
-
-    let existing = findCurrentBlock(itemId);
-
-    if (existing && (existing.dataset.imdbId !== imdbId || existing.dataset.serverId !== serverId)) {
-      existing.remove();
-      existing = null;
-    }
-
-    if (!existing) {
-      existing = createBlock(itemId, imdbId, serverId);
-      target.parent.insertBefore(existing, target.before);
-    } else if (existing.nextSibling !== target.before) {
-      target.parent.insertBefore(existing, target.before);
-    }
-  }
-
-  async function run() {
-    const mySeq = ++runSeq;
-    injectStyle();
-
-    if (!isDetailsRoute()) {
-      removeAllBlocks();
-      return;
-    }
-
-    const itemId = getItemIdFromUrl();
-    if (!itemId) return;
-
-    const item = await fetchItem(itemId);
-    if (mySeq !== runSeq) return;
-    if (!item) return;
-
-    if (item.Type !== "Series") {
-      removeAllBlocks();
-      return;
-    }
-
-    const imdbId = normalizeImdbId(getProviderId(item, "imdb"));
-    if (!imdbId) {
-      removeAllBlocks();
-      return;
-    }
-
-    const serverId = getServerIdFromUrl();
-    if (!serverId) return;
-
-    const existingVisibleBlock = findCurrentBlock(itemId);
-    if (
-      existingVisibleBlock &&
-      existingVisibleBlock.dataset.imdbId === imdbId &&
-      existingVisibleBlock.dataset.serverId === serverId &&
-      existingVisibleBlock.isConnected &&
-      isElementVisible(existingVisibleBlock)
-    ) {
-      return;
-    }
-
-    const startedAt = Date.now();
-    let target = null;
-    let readyLink = null;
-
-    while (Date.now() - startedAt < CFG.maxWaitMs) {
-      if (mySeq !== runSeq) return;
-
-      const nowItemId = getItemIdFromUrl();
-      if (!nowItemId || nowItemId !== itemId) return;
-
-      target = findInsertTarget();
-      readyLink = findVisibleOfficialImdbLink(imdbId);
-
-      if (target && readyLink) break;
-      if (target && Date.now() - startedAt >= CFG.readyAnchorWaitMs) break;
-
-      await sleep(120);
-    }
-
-    if (mySeq !== runSeq) return;
-    if (!target) return;
-
-    ensureMounted(itemId, imdbId, serverId, target);
-  }
-
-  window.addEventListener("hashchange", function () { scheduleRun(0); }, true);
-  window.addEventListener("popstate", function () { scheduleRun(0); }, true);
-  document.addEventListener("viewshow", function () { scheduleRun(0); }, true);
-  document.addEventListener("viewbeforeshow", function () { scheduleRun(0); }, true);
-
-  if (document.body) {
-    new MutationObserver(function () {
-      if (!isDetailsRoute()) return;
-
-      const itemId = getItemIdFromUrl() || "";
-      if (!itemId) return;
-
-      const currentBlock = findCurrentBlock(itemId);
-      if (!currentBlock || !currentBlock.isConnected || !isElementVisible(currentBlock)) {
-        scheduleRun(CFG.reapplyDelayMs);
-      }
-    }).observe(document.body, { childList: true, subtree: true });
-  }
-
-  setInterval(function () {
-    if (!isDetailsRoute()) return;
-
-    const itemId = getItemIdFromUrl() || "";
-    const currentBlock = itemId ? findCurrentBlock(itemId) : null;
-
-    if (itemId && itemId !== lastItemId) {
-      lastItemId = itemId;
-      scheduleRun(0);
-      scheduleRun(350);
-      scheduleRun(900);
-      return;
-    }
-
-    if (itemId) {
-      if (!currentBlock || !currentBlock.isConnected || !isElementVisible(currentBlock)) {
-        scheduleRun(CFG.reapplyDelayMs);
-      }
-    }
-  }, CFG.watchDogMs);
-
-  scheduleRun(0);
+scheduleRun(0);
 })();
