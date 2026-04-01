@@ -4,7 +4,7 @@ Display the IMDb episodes ratings heatmap grid on Jellyfin TV Series pages.
 The userscript adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
 
 <p align="center">
-  <img src="./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-1_resultat.webp" alt="Android view" width="320"><br>
+  <img src="./assets/Jellyfin-Episodes-Ratings-Grid-1.4.webp" alt="Android view" width="520"><br>
 </p>
 
 ## Features
