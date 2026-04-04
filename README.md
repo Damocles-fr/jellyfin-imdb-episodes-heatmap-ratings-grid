@@ -80,7 +80,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - Heatmap data is loaded only after clicking the drop-down menu
 - When a supported series page is detected, the script requests the current Jellyfin item metadata through the local Jellyfin API and reads the **IMDb provider ID** from the item's `ProviderIds`
 - When the drop-down is opened, the script fetches the corresponding JSON dataset from the IMDb heatmap dataset source (fallback to Jellyfin episode metadata when the IMDb dataset has no rating)
-- If the ratings exists, the script builds the full ratings grid
+- If the ID's exists, the script builds the full ratings grid
 - Cached requests for item metadata and external ratings dataset to reduce repeated loading
 
 ## Need Help?
