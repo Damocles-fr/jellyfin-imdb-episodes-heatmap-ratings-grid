@@ -50,7 +50,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Installation
 
-#### **- Alternative installation : available in [JellyFrame plugin](https://github.com/Jellyfin-PG/JellyFrame)**
+#### **- Alternative installation : available through [JellyFrame plugin](https://github.com/Jellyfin-PG/JellyFrame)**
 
 #### 1. Install the *Jellyfin JavaScript Injector* plugin in your Jellyfin server if it is not already installed (may need server reboot).
 
