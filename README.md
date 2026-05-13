@@ -9,7 +9,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Features
 
-- **heatmap-style** graph ratings chart
+- **Heatmap-style** graph ratings chart
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
 - **Fast access** : Episodes and seasons cells are linked to the library
 - **Custom themes** & backgrounds compatibility
