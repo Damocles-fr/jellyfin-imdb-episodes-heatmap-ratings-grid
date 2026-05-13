@@ -14,12 +14,12 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Fast access** : Episodes and seasons cells are linked to the library
 - **Custom themes** & backgrounds compatibility
 - **Highlights** the matching season number and episode number when hovering a cell
+- **Top-left button to invert the grid layout (Seasons ↔ Episodes)**. Preference saved locally.
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap data are **loaded only after clicking the drop-down menu**
 - Compatibility to use with HoverDetails script distributed through the new [**JellyFrame plugin**, thanks to @grimmdev](https://github.com/Jellyfin-PG/JellyFrame))
 - Large IMDb episode ratings dataset thanks to [@ya0903](https://github.com/ya0903/imdb-episode-dataset)
-- **Top-left button to invert the grid layout (Seasons ↔ Episodes)**. Preference saved locally.
 - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
 
 ## Transparency
