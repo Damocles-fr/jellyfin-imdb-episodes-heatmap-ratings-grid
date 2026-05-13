@@ -17,13 +17,10 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Compact layout**, display up to 26 episodes and 26 seasons without scrolling on desktop
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap data are **loaded only after clicking the drop-down menu**
-- **New** :
-    - Compatibility to use with HoverDetails script distributed through the new [**JellyFrame plugin**, thanks to @grimmdev](https://github.com/Jellyfin-PG/JellyFrame))
-    - Larger IMDb episode ratings dataset thanks to [@ya0903](https://github.com/ya0903/imdb-episode-dataset)
-    - **Top-left button to invert the grid layout (Seasons ↔ Episodes)**. Preference saved locally.
-    - Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
-    - Improved compatibility with hover-based info/tooltips scripts and plugins
-    - [Various fixes & Improvements](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases/tag/1.5)
+- Compatibility to use with HoverDetails script distributed through the new [**JellyFrame plugin**, thanks to @grimmdev](https://github.com/Jellyfin-PG/JellyFrame))
+- Large IMDb episode ratings dataset thanks to [@ya0903](https://github.com/ya0903/imdb-episode-dataset)
+- **Top-left button to invert the grid layout (Seasons ↔ Episodes)**. Preference saved locally.
+- Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
 
 ## Transparency
 
@@ -76,9 +73,9 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ## Technical
 
-- It won't display on Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector
+- It won't display on Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector or JellyFrame
 - Compatible with Jellyfin 10.11 and above. Not tested on Jellyfin 10.10 and under
-- Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
+- Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin or JellyFrame
 - DOM insertion in a stable location on series page (between Seasons and cast)
 - Data source : The heatmap data is loaded from the IMDb heatmap dataset by @ya0903
 - Heatmap data is loaded only after clicking the drop-down menu
@@ -86,6 +83,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - When the drop-down is opened, the script fetches the corresponding JSON dataset from the IMDb heatmap dataset source (fallback to Jellyfin episode metadata when the IMDb dataset has no rating)
 - If the ID's exists, the script builds the full ratings grid
 - Cached requests for item metadata and external ratings dataset to reduce repeated loading
+- Preferences (invert seasons ↔ episodes) and cache saved locally client-side
 
 ## Need Help?
 - Don't hesitate to open an [issue](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/issues)
