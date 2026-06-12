@@ -1,6 +1,6 @@
 # Jellyfin Episodes Ratings Grid 🟧🟨🟩🟩
 
-Display the IMDb episodes ratings heatmap grid on Jellyfin TV Series pages.
+Display the episodes ratings heatmap grid on Jellyfin TV Series pages.
 The userscript adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid spoilers.
 
 <p align="center">
@@ -19,7 +19,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap data are **loaded only after clicking the drop-down menu**
 - Compatibility to use with HoverDetails script distributed through [**JellyFrame plugin**, thanks @grimmdev](https://github.com/Jellyfin-PG/JellyFrame)
-- IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin metadata when the dataset has no rating
+- Fetch IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin CommunityRating metadata
 - Alternative local script: no online IMDb dataset, only use CommunityRating metadata fetched directly from the Jellyfin server
 
 ## Transparency
