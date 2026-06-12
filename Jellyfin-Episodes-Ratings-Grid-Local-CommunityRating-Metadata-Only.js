@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const CFG={title:'IMDb Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v6',root:'[data-jf-ieg-root="1"]',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,ttl:86400000};
+const CFG={title:'Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v6',root:'[data-jf-ieg-root="1"]',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,ttl:86400000};
 const INV_KEY='jf-imdb-episodes-grid-inverted-v1';
 const HOVER_STYLE_ID='jf-hover-tooltip-style';
 const HOVER_TOOLTIP_ID='jf-hover-tooltip';
@@ -11,7 +11,6 @@ const q=(s,r=document)=>r.querySelector(s);
 const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const cacheGet=k=>{try{const o=JSON.parse(sessionStorage.getItem(k)||'null');if(!o||Date.now()>o.e)return null;return o.v;}catch{return null;}};
 const cacheSet=(k,v,ttl=CFG.ttl)=>{try{sessionStorage.setItem(k,JSON.stringify({v,e:Date.now()+ttl}));}catch{}};
-const normId=s=>{s=String(s||'').trim();return s?(s.startsWith('tt')?s:'tt'+s):'';};
 const toRating=v=>{const n=typeof v==='string'?parseFloat(v):Number(v);return Number.isFinite(n)&&n>0&&n<=10?n:null;};
 const getInv=()=>{try{return localStorage.getItem(INV_KEY)==='true';}catch{return false;}};
 const setInv=v=>{try{localStorage.setItem(INV_KEY,v?'true':'false');}catch{}};
@@ -27,14 +26,13 @@ const detailsUrl=(id,sid)=>location.origin+webRoot()+'#'+detailsHash(id,sid);
 const visible=el=>{if(!el||!el.isConnected)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&cs.opacity!=='0'&&r.width>2&&r.height>2;};
 const best=els=>{let b=null,a=0;for(const el of els){if(!visible(el))continue;const r=el.getBoundingClientRect(),x=r.width*r.height;if(x>a){a=x;b=el;}}return b||els[els.length-1]||null;};
 const isDetails=()=>{const h=String(location.hash||'');return h.includes('/details')&&(h.includes('id=')||new URL(location.href).searchParams.get('id'));};
-const imdbFromItem=item=>{const ids=item&&item.ProviderIds||{};for(const k of Object.keys(ids))if(String(k).toLowerCase()==='imdb')return normId(ids[k]);return '';};
 
-async function fetchItem(id){const k='ieg_item_'+id,c=cacheGet(k);if(c)return c;const v=await api('/Items/'+encodeURIComponent(id)+'?Fields=ProviderIds');cacheSet(k,v);return v;}
+async function fetchItem(id){const k='ieg_item_'+id,c=cacheGet(k);if(c)return c;const v=await api('/Items/'+encodeURIComponent(id));cacheSet(k,v);return v;}
 
 async function fetchJf(seriesId){
   const k='ieg_jf_'+seriesId,c=cacheGet(k);if(c)return c;
   const [epsRes,ssRes]=await Promise.all([
-    api('/Shows/'+encodeURIComponent(seriesId)+'/Episodes?Fields=ProviderIds,CommunityRating,IndexNumberEnd,ParentIndexNumber,IndexNumber,Name,PremiereDate&EnableImages=false&EnableUserData=false&Limit=20000').catch(()=>({Items:[]})),
+    api('/Shows/'+encodeURIComponent(seriesId)+'/Episodes?Fields=CommunityRating,IndexNumberEnd,ParentIndexNumber,IndexNumber,Name,PremiereDate&EnableImages=false&EnableUserData=false&Limit=20000').catch(()=>({Items:[]})),
     api('/Shows/'+encodeURIComponent(seriesId)+'/Seasons?Fields=IndexNumber&EnableImages=false&EnableUserData=false').catch(()=>({Items:[]}))
   ]);
   const seasonsByNum={},seasonIds={};
@@ -44,7 +42,7 @@ async function fetchJf(seriesId){
     if(!Number.isFinite(sn)||!Number.isFinite(en)||sn<1||en<1)continue;
     const end=typeof ep.IndexNumberEnd==='number'&&ep.IndexNumberEnd>=en?ep.IndexNumberEnd:en;
     if(!seasonsByNum[sn])seasonsByNum[sn]=[];
-    seasonsByNum[sn].push({ep:en,epEnd:end,jfId:ep.Id||'',name:ep.Name||'',airDate:ep.PremiereDate||'',imdbEpId:normId((ep.ProviderIds&&(ep.ProviderIds.Imdb||ep.ProviderIds.imdb))||''),rating:toRating(ep&&ep.CommunityRating)});
+    seasonsByNum[sn].push({ep:en,epEnd:end,jfId:ep.Id||'',name:ep.Name||'',airDate:ep.PremiereDate||'',rating:toRating(ep&&ep.CommunityRating)});
   }
   const val={seasonsByNum,seasonIds};cacheSet(k,val);return val;
 }
@@ -56,10 +54,9 @@ function buildData(jf){
     for(const j of jfList){
       const start=Number(j.ep),end=Number(j.epEnd)>=start?Number(j.epEnd):start;
       for(let n=start;n<=end;n++){
-        if(!byEp[n])byEp[n]={ep:n,exists:true,rating:null,imdbEpId:'',jfId:'',name:'',airDate:'',combined:end>start};
+        if(!byEp[n])byEp[n]={ep:n,exists:true,rating:null,jfId:'',name:'',airDate:'',combined:end>start};
         const x=byEp[n];
         if(x.rating==null&&j.rating!=null)x.rating=j.rating;
-        if(!x.imdbEpId&&j.imdbEpId)x.imdbEpId=j.imdbEpId;
         if(!x.jfId&&j.jfId)x.jfId=j.jfId;
         if(!x.name&&j.name)x.name=j.name;
         if(!x.airDate&&j.airDate)x.airDate=j.airDate;
@@ -167,12 +164,12 @@ function bindInternalNav(root,sid){
   root.addEventListener('click',e=>{const a=e.target.closest('a[data-jf-internal-id]');if(!a||!root.contains(a))return;if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;const id=a.dataset.jfInternalId||'';if(!id)return;e.preventDefault();e.stopPropagation();location.hash=detailsHash(id,sid);},true);
 }
 
-function renderFallback(body,imdbId){
+function renderEmpty(body){
   body.innerHTML='';
-  const a=document.createElement('a');a.className='jf-ieg-link emby-button button-link';a.href='https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/ratings/';a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.textContent=CFG.title;body.appendChild(a);
+  const d=document.createElement('div');d.className='jf-ieg-status';d.textContent='Aucune note disponible pour cette série.';body.appendChild(d);
 }
 
-function renderGrid(body,seasons,imdbId,sid,seriesName){
+function renderGrid(body,seasons,sid,seriesName){
   body.innerHTML='';
   const inverted=getInv();
   const allEpNums=[...new Set(seasons.flatMap(s=>s.episodes.map(e=>e.ep)).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
@@ -193,8 +190,9 @@ function renderGrid(body,seasons,imdbId,sid,seriesName){
     a.textContent='S'+s.num;
     a.title=(seriesName||CFG.title)+' - Saison '+String(s.num).padStart(2,'0');
     a.dataset.jfAxisSeason=String(s.num);
-    if(s.seasonJfId&&sid){a.href=detailsUrl(s.seasonJfId,sid);a.dataset.jfInternalId=s.seasonJfId;a.classList.add('emby-button','button-link');}
-    else{a.href='https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/episodes/?season='+s.num;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.classList.add('emby-button','button-link');}
+    a.classList.add('emby-button','button-link');
+    if(s.seasonJfId&&sid){a.href=detailsUrl(s.seasonJfId,sid);a.dataset.jfInternalId=s.seasonJfId;}
+    else{a.href='#';a.setAttribute('aria-disabled','true');}
     return a;
   };
 
@@ -208,24 +206,35 @@ function renderGrid(body,seasons,imdbId,sid,seriesName){
 
   const mkGhost=()=>{const d=document.createElement('div');d.className='jf-ieg-cell jf-ieg-ghost';d.setAttribute('aria-hidden','true');return d;};
 
-  const mkEmpty=(ep,snum)=>{
+  // Lien interne vers l'épisode si dispo, sinon vers la saison correspondante sur le serveur Jellyfin.
+  const linkTarget=(ep,season)=>{
+    if(ep.jfId&&sid)return{id:ep.jfId,episode:true};
+    if(season&&season.seasonJfId&&sid)return{id:season.seasonJfId,episode:false};
+    return null;
+  };
+
+  const mkEmpty=(ep,season)=>{
     const a=document.createElement('a');a.className='jf-ieg-cell jf-ieg-empty';a.textContent='-';
-    if(ep.jfId&&sid){a.href=detailsUrl(ep.jfId,sid);a.dataset.jfInternalId=ep.jfId;a.classList.add('emby-button','button-link');bindCellHover(a,ep.jfId);}
-    else{a.href=ep.imdbEpId?('https://www.imdb.com/title/'+encodeURIComponent(ep.imdbEpId)+'/'):('https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/episodes/?season='+snum);a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.classList.add('emby-button','button-link');}
-    bindAxisHover(a,grid,snum,ep.ep);
+    a.classList.add('emby-button','button-link');
+    const tgt=linkTarget(ep,season);
+    if(tgt){a.href=detailsUrl(tgt.id,sid);a.dataset.jfInternalId=tgt.id;if(tgt.episode)bindCellHover(a,tgt.id);}
+    else{a.href='#';a.setAttribute('aria-disabled','true');}
+    bindAxisHover(a,grid,season.num,ep.ep);
     return a;
   };
 
-  const mkRate=(ep,snum)=>{
+  const mkRate=(ep,season)=>{
     if(!ep||ep.exists!==true)return mkGhost();
-    if(toRating(ep.rating)==null)return mkEmpty(ep,snum);
+    if(toRating(ep.rating)==null)return mkEmpty(ep,season);
     const a=document.createElement('a');a.className='jf-ieg-cell jf-ieg-rating';a.textContent=Number(ep.rating).toFixed(1);a.style.cssText=ratingStyle(ep.rating);
     if(ep.rating>=9.8)a.classList.add('jf-ieg-rating-98plus');
     else if(ep.rating>=9.7)a.classList.add('jf-ieg-rating-97');
     else if(ep.rating>=9.6)a.classList.add('jf-ieg-rating-96');
-    if(ep.jfId&&sid){a.href=detailsUrl(ep.jfId,sid);a.dataset.jfInternalId=ep.jfId;a.classList.add('emby-button','button-link');bindCellHover(a,ep.jfId);}
-    else{a.href=ep.imdbEpId?('https://www.imdb.com/title/'+encodeURIComponent(ep.imdbEpId)+'/'):('https://www.imdb.com/title/'+encodeURIComponent(imdbId)+'/episodes/?season='+snum);a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('is','emby-linkbutton');a.classList.add('emby-button','button-link');}
-    bindAxisHover(a,grid,snum,ep.ep);
+    a.classList.add('emby-button','button-link');
+    const tgt=linkTarget(ep,season);
+    if(tgt){a.href=detailsUrl(tgt.id,sid);a.dataset.jfInternalId=tgt.id;if(tgt.episode)bindCellHover(a,tgt.id);}
+    else{a.href='#';a.setAttribute('aria-disabled','true');}
+    bindAxisHover(a,grid,season.num,ep.ep);
     return a;
   };
 
@@ -233,17 +242,17 @@ function renderGrid(body,seasons,imdbId,sid,seriesName){
     for(const s of seasons)grid.appendChild(mkSeason(s));
     for(const n of allEpNums){
       grid.appendChild(mkEpHead(n,true,false));
-      for(const s of seasons)grid.appendChild(mkRate(s.episodes.find(e=>e.ep===n),s.num));
+      for(const s of seasons)grid.appendChild(mkRate(s.episodes.find(e=>e.ep===n),s));
     }
   }else{
     for(const n of allEpNums)grid.appendChild(mkEpHead(n,false,true));
     for(const s of seasons){
       const sh=mkSeason(s);sh.classList.add('jf-ieg-sticky-left');grid.appendChild(sh);
-      for(const n of allEpNums)grid.appendChild(mkRate(s.episodes.find(e=>e.ep===n),s.num));
+      for(const n of allEpNums)grid.appendChild(mkRate(s.episodes.find(e=>e.ep===n),s));
     }
   }
 
-  corner.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setInv(!getInv());renderGrid(body,seasons,imdbId,sid,seriesName);});
+  corner.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setInv(!getInv());renderGrid(body,seasons,sid,seriesName);});
   scroll.appendChild(grid);body.appendChild(scroll);bindInternalNav(scroll,sid);
 }
 
@@ -253,23 +262,23 @@ async function loadPanel(root){
   const body=q('.jf-ieg-body',root);if(!body){root.dataset.loading='0';return;}
   body.innerHTML='<div class="jf-ieg-status">Loading…</div>';
   try{
-    const imdbId=root.dataset.imdbId,seriesId=root.dataset.itemId,sid=root.dataset.serverId||'',seriesName=root.dataset.seriesName||'';
+    const seriesId=root.dataset.itemId,sid=root.dataset.serverId||'',seriesName=root.dataset.seriesName||'';
     const jf=await fetchJf(seriesId).catch(()=>({seasonsByNum:{},seasonIds:{}}));
     const seasons=buildData(jf);
     body.innerHTML='';
-    if(!seasons.length||!seasons.some(s=>s.episodes.some(e=>e.rating!=null||e.name||e.jfId)))renderFallback(body,imdbId);else renderGrid(body,seasons,imdbId,sid,seriesName);
+    if(!seasons.length||!seasons.some(s=>s.episodes.some(e=>e.rating!=null||e.name||e.jfId)))renderEmpty(body);else renderGrid(body,seasons,sid,seriesName);
     root.dataset.loaded='1';
   }catch(e){
     console.warn('[JF-IEG] Panel load failed',e);
-    renderFallback(body,root.dataset.imdbId);
+    renderEmpty(body);
     root.dataset.loaded='1';
   }finally{root.dataset.loading='0';}
 }
 
-function createBlock(itemId,imdbId,sid,seriesName){
+function createBlock(itemId,sid,seriesName){
   const root=document.createElement('section');
   root.setAttribute('data-jf-ieg-root','1');
-  root.dataset.itemId=itemId;root.dataset.imdbId=imdbId;root.dataset.serverId=sid||'';root.dataset.seriesName=seriesName||'';root.dataset.loaded='0';root.dataset.loading='0';
+  root.dataset.itemId=itemId;root.dataset.serverId=sid||'';root.dataset.seriesName=seriesName||'';root.dataset.loaded='0';root.dataset.loading='0';
   root.innerHTML='<div class="jf-ieg-box"><button type="button" class="jf-ieg-toggle" aria-expanded="false"><span class="jf-ieg-toggle-label">'+CFG.title+'</span><span class="material-icons jf-ieg-toggle-icon" aria-hidden="true">expand_more</span></button><div class="jf-ieg-panel" hidden><div class="jf-ieg-body"></div></div></div>';
   const t=q('.jf-ieg-toggle',root),p=q('.jf-ieg-panel',root);
   t.addEventListener('click',()=>{const ex=t.getAttribute('aria-expanded')==='true',nx=!ex;t.setAttribute('aria-expanded',nx?'true':'false');p.hidden=!nx;if(nx)loadPanel(root);});
@@ -280,13 +289,12 @@ const currentBlock=id=>qa(CFG.root).find(el=>el.dataset.itemId===id)||null;
 const cleanup=id=>qa(CFG.root).forEach(el=>{if(el.dataset.itemId!==id)el.remove();});
 const removeAll=()=>qa(CFG.root).forEach(el=>el.remove());
 const findInsertTarget=()=>{const cast=best(qa('#castCollapsible'));if(cast&&cast.parentNode)return{parent:cast.parentNode,before:cast};const ph=best(qa('#peopleHeader'));const sec=ph?ph.closest('.verticalSection, .detailVerticalSection, .emby-scroller-container'):null;return sec&&sec.parentNode&&visible(sec)?{parent:sec.parentNode,before:sec}:null;};
-const findOfficialImdbLink=id=>id?best(qa('a[href*="imdb.com/title/"]').filter(a=>a.isConnected&&!a.closest(CFG.root)&&visible(a)&&((a.getAttribute('href')||'').match(/imdb\.com\/(?:[a-z]{2}\/)?title\/(tt\d+)/i)||[])[1]===id)):null;
 
-function ensureMounted(itemId,imdbId,sid,seriesName,target){
+function ensureMounted(itemId,sid,seriesName,target){
   cleanup(itemId);
   let block=currentBlock(itemId);
-  if(block&&(block.dataset.imdbId!==imdbId||block.dataset.serverId!==sid)){block.remove();block=null;}
-  if(!block){block=createBlock(itemId,imdbId,sid,seriesName);target.parent.insertBefore(block,target.before);}
+  if(block&&block.dataset.serverId!==sid){block.remove();block=null;}
+  if(!block){block=createBlock(itemId,sid,seriesName);target.parent.insertBefore(block,target.before);}
   else if(block.nextSibling!==target.before)target.parent.insertBefore(block,target.before);
 }
 
@@ -297,22 +305,20 @@ async function run(){
   let item;try{item=await fetchItem(itemId);}catch{return;}
   if(seq!==runSeq||!item)return;
   if(item.Type!=='Series'){removeAll();hideTooltip();return;}
-  const imdbId=imdbFromItem(item);if(!imdbId){removeAll();hideTooltip();return;}
   const sid=serverIdFromUrl();if(!sid)return;
   const existing=currentBlock(itemId);
-  if(existing&&existing.dataset.imdbId===imdbId&&existing.dataset.serverId===sid&&existing.isConnected&&visible(existing))return;
+  if(existing&&existing.dataset.serverId===sid&&existing.isConnected&&visible(existing))return;
   const started=Date.now();let target=null;
   while(Date.now()-started<CFG.maxWaitMs){
     if(seq!==runSeq)return;
     if(itemIdFromUrl()!==itemId)return;
     target=findInsertTarget();
-    const hasLink=findOfficialImdbLink(imdbId);
-    if(target&&hasLink)break;
     if(target&&Date.now()-started>=CFG.readyAnchorWaitMs)break;
+    if(target)break;
     await sleep(100);
   }
   if(seq!==runSeq||!target)return;
-  ensureMounted(itemId,imdbId,sid,item.Name||'',target);
+  ensureMounted(itemId,sid,item.Name||'',target);
 }
 
 window.addEventListener('hashchange',()=>{hideTooltip();scheduleRun(0);},true);
