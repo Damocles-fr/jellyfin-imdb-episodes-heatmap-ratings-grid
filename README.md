@@ -19,7 +19,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap data are **loaded only after clicking the drop-down menu**
 - Compatibility to use with HoverDetails script distributed through the new [**JellyFrame plugin**, thanks to @grimmdev](https://github.com/Jellyfin-PG/JellyFrame))
-- Fallback to Jellyfin episode metadata when the IMDb dataset has no rating
+- IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin episode metadata when the IMDb dataset has no rating
 - Alternative local script: everything is handled locally, only using ratings metadata fetched directly from the Jellyfin server
 
 ## Transparency
