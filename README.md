@@ -20,7 +20,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - Heatmap data are **loaded only after clicking the drop-down menu**
 - Compatibility to use with HoverDetails script distributed through [**JellyFrame plugin**, thanks @grimmdev](https://github.com/Jellyfin-PG/JellyFrame)
 - IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin metadata when the dataset has no rating
-- Alternative local script: everything is handled locally, only using ratings metadata fetched directly from the Jellyfin server
+- Alternative local script: no online IMDb dataset, only use CommunityRating metadata fetched directly from the Jellyfin server
 
 ## Transparency
 
