@@ -66,7 +66,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 })();
 ```
 
-###### Alternative script : use only JF server CommunityRating metadata, no IMDb online dataset, everything local, copy/paste this script instead : [Local-CommunityRating-Metadata-Only.js](https://raw.githubusercontent.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/refs/heads/main/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js)
+###### ***Alternative script*** : use only JF server CommunityRating metadata, no IMDb online dataset, everything local, copy/paste this script instead : [Local-CommunityRating-Metadata-Only.js](https://raw.githubusercontent.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/refs/heads/main/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js) (Perfect to use with [Jellyfin IMDb Ratings](https://github.com/voc0der/jellyfin-imdb-rating-updater) or [MDBList Ratings](https://github.com/Druidblack/Jellyfin.Plugin.MDBList_Ratings))
 
 #### 5. Click ***Enabled*** => Click ***Save***
 
