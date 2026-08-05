@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const CFG={title:'IMDb Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v6',root:'[data-jf-ieg-root="1"]',datasetBase:'https://cdn.jsdelivr.net/gh/ya0903/imdb-episode-dataset@main/data/shows',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,ttl:86400000};
+const CFG={title:'IMDb Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v8',root:'[data-jf-ieg-root="1"]',datasetBase:'https://cdn.jsdelivr.net/gh/ya0903/imdb-episode-dataset@main/data/shows',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,ttl:86400000};
 const INV_KEY='jf-imdb-episodes-grid-inverted-v1';
 const HOVER_STYLE_ID='jf-hover-tooltip-style';
 const HOVER_TOOLTIP_ID='jf-hover-tooltip';
@@ -109,7 +109,7 @@ function ratingStyle(r){
   else if(v>=9.7)glow='0 0 8px rgba(146,255,74,.28),0 0 16px rgba(146,255,74,.13),inset 0 1px 0 rgba(255,255,255,.11)';
   else if(v>=9.6)glow='0 0 6px rgba(86,255,72,.22),0 0 12px rgba(86,255,72,.10),inset 0 1px 0 rgba(255,255,255,.10)';
   else if(v>=9.0)glow='0 0 5px hsla('+h+','+s+'%,'+(light+8)+'%,.28),inset 0 1px 0 rgba(255,255,255,.08)';
-  return 'background:hsla('+h+','+s+'%,'+light+'%,'+a+');border-color:hsla('+h+','+s+'%,'+Math.min(light+(v>=7?18:10),v>=7?85:34)+'%,.30);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.70);box-shadow:'+glow+';';
+  return 'background:hsla('+h+','+s+'%,'+light+'%,'+a+');border-color:hsla('+h+','+s+'%,'+Math.min(light+(v>=7?18:10),v>=7?85:34)+'%,.30);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.70),0 0 1px rgba(0,0,0,.55);box-shadow:'+glow+';';
 }
 
 function injectStyle(){
@@ -129,7 +129,7 @@ ${CFG.root}{--c1:2.72rem;--c2:3.05rem;--rh:2.36rem;--axis:rgba(34,34,40,.84);--a
 .jf-ieg-season:hover,.jf-ieg-episode:hover{background:var(--axis2) !important;border-color:rgba(255,255,255,.24) !important}
 .jf-ieg-sticky-left{position:sticky;left:0;z-index:5;background:var(--axis) !important;border-color:rgba(255,255,255,.14) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important}
 .jf-ieg-axis-match{background:var(--axis2) !important;border-color:rgba(255,255,255,.30) !important;box-shadow:0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.05) !important}
-.jf-ieg-rating{cursor:pointer;font-weight:900;font-size:1.28rem;letter-spacing:-.03em;font-variant-numeric:tabular-nums;transition:filter .16s ease,border-color .16s ease,box-shadow .16s ease;text-decoration:none !important;outline:none !important;color:#fff !important;z-index:1}.jf-ieg-rating:hover{filter:brightness(1.36) saturate(1.42) contrast(1.12);border-color:rgba(255,255,255,.22)}
+.jf-ieg-rating{cursor:pointer;font-family:inherit !important;font-weight:700 !important;font-size:1.28rem;letter-spacing:-.01em;font-variant-numeric:tabular-nums;transition:filter .16s ease,border-color .16s ease,box-shadow .16s ease;text-decoration:none !important;outline:none !important;color:#fff !important;z-index:1}.jf-ieg-rating:hover{filter:brightness(1.36) saturate(1.42) contrast(1.12);border-color:rgba(255,255,255,.22)}
 .jf-ieg-rating-96{filter:brightness(1.26) saturate(1.34) contrast(1.10);text-shadow:0 1px 0 rgba(0,0,0,.88),0 0 1px rgba(0,0,0,.58),0 0 5px rgba(86,255,72,.26),0 0 10px rgba(86,255,72,.11) !important}
 .jf-ieg-rating-97{filter:brightness(1.32) saturate(1.40) contrast(1.12);text-shadow:0 1px 0 rgba(0,0,0,.90),0 0 1px rgba(0,0,0,.60),0 0 6px rgba(146,255,74,.32),0 0 12px rgba(146,255,74,.15) !important}
 .jf-ieg-rating-98plus{filter:brightness(1.36) saturate(1.42) contrast(1.12);text-shadow:0 1px 0 rgba(0,0,0,.90),0 0 1px rgba(0,0,0,.60),0 0 6px rgba(255,240,28,.34),0 0 12px rgba(255,240,28,.18) !important}
