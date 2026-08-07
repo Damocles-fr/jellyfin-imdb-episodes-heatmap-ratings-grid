@@ -21,7 +21,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - Compatibility to use with HoverDetails script distributed through [**JellyFrame plugin**, thanks @grimmdev](https://github.com/Jellyfin-PG/JellyFrame)
 - Compatibility to use with my [**Jellyfin More Like This script**](https://github.com/Damocles-fr/jellyfin-more-like-this)
 - Fetch IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin CommunityRating metadata
-- Alternative local script: no online IMDb dataset, only use CommunityRating metadata fetched directly from the Jellyfin server
+- **Alternative local script**: no online IMDb dataset, only use **CommunityRating metadata** fetched directly from the Jellyfin server
 
 ## Transparency
 
