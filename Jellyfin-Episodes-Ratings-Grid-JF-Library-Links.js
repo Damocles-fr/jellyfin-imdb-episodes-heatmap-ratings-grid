@@ -36,9 +36,11 @@ async function fetchDataset(imdbId){
   const r=await fetch(CFG.datasetBase+'/'+encodeURIComponent(imdbId)+'.json',{credentials:'omit'});
   if(r.status===404){cacheSet(k,null);return null;}
   if(!r.ok)throw new Error('dataset '+r.status);
-  const show=await r.json(),seasons=show&&show.seasons;
-  if(!seasons||typeof seasons!=='object'){cacheSet(k,null);return null;}
-  const nums=Object.keys(seasons).map(Number).filter(n=>n>0);
+  const show=await r.json();
+  if(!show||typeof show!=='object'||Array.isArray(show)){cacheSet(k,null);return null;}
+  const seasons=show.seasons;
+  if(!seasons||typeof seasons!=='object'||Array.isArray(seasons)){cacheSet(k,null);return null;}
+  const nums=Object.keys(seasons).map(Number).filter(n=>Number.isInteger(n)&&n>0&&n<=500);
   if(!nums.length){cacheSet(k,null);return null;}
   const max=Math.max(...nums),out=[];
   for(let s=1;s<=max;s++){
