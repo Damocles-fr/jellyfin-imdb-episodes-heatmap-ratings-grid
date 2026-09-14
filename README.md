@@ -21,7 +21,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **HoverDetails**, [thanks @grimmdev](https://github.com/Jellyfin-PG/JellyFrame)
 - Compatibility to use with my [Jellyfin More Like This script](https://github.com/Damocles-fr/jellyfin-more-like-this)
 - Fetch IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin CommunityRating metadata
-- **Alternative local script**: no online IMDb dataset, only use *CommunityRating* metadata fetched directly from the Jellyfin server. Perfect with plugins like Jellyfin IMDb Ratings or MDBList Ratings, which already update the ratings with the IMDb ones.
+- **Alternative local script**: no online IMDb dataset, only use *CommunityRating* metadata fetched directly from the Jellyfin server. Faster. Perfect with plugins like Jellyfin IMDb Ratings or MDBList Ratings, which already update the ratings with the IMDb ones.
 
 
 ## Transparency
@@ -69,7 +69,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
  or 
 
-###### ***Alternative Offline script*** : use only JF server CommunityRating metadata, no IMDb online dataset, everything local, copy/paste this script instead : [Local-CommunityRating-Metadata-Only.js](https://raw.githubusercontent.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/refs/heads/main/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js). This version is perfect with plugins like Jellyfin IMDb Ratings or MDBList Ratings, which already update the server ratings with the IMDb ones.
+###### ***Alternative Offline script*** : use only JF server CommunityRating metadata, no IMDb online dataset, everything local, copy/paste this script instead : [Local-CommunityRating-Metadata-Only.js](https://raw.githubusercontent.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/refs/heads/main/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js). Faster. This version is perfect with plugins like Jellyfin IMDb Ratings or MDBList Ratings, which already update the server ratings with the IMDb ones.
 
 #### 5. Click ***Enabled*** => Click ***Save***
 
