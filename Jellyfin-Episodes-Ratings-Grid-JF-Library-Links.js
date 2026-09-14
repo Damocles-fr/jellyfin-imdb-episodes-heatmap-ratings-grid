@@ -1,11 +1,12 @@
 (function(){
 'use strict';
-const CFG={title:'IMDb Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v8',root:'[data-jf-ieg-root="1"]',datasetBase:'https://cdn.jsdelivr.net/gh/ya0903/imdb-episode-dataset@main/data/shows',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,ttl:86400000};
+const CFG={title:'IMDb Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v8',root:'[data-jf-ieg-root="1"]',datasetBase:'https://cdn.jsdelivr.net/gh/ya0903/imdb-episode-dataset@main/data/shows',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,pollMs:250,maxSeasons:500,maxEpisodeSpan:200,observerIdleMs:250,retryMs:5000,ttl:86400000};
 const INV_KEY='jf-imdb-episodes-grid-inverted-v1';
 const HOVER_STYLE_ID='jf-hover-tooltip-style';
 const HOVER_TOOLTIP_ID='jf-hover-tooltip';
 let scheduled=null,burst=[],runSeq=0,lastItemId='';
 let hoverTimer=null,hoverCard=null,hoverX=0,hoverY=0;
+let anchorItem='',anchorSince=0;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const q=(s,r=document)=>r.querySelector(s);
 const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
@@ -17,8 +18,10 @@ const getInv=()=>{try{return localStorage.getItem(INV_KEY)==='true';}catch{retur
 const setInv=v=>{try{localStorage.setItem(INV_KEY,v?'true':'false');}catch{}};
 const scheduleRun=d=>{if(scheduled)clearTimeout(scheduled);scheduled=setTimeout(()=>{scheduled=null;run();},typeof d==='number'?d:0);};
 const scheduleBurst=arr=>{burst.forEach(clearTimeout);burst=[];(arr||[0]).forEach(d=>burst.push(setTimeout(run,d||0)));};
-const token=()=>{try{const o=JSON.parse(localStorage.getItem('jellyfin_credentials')||'null');const ss=o&&o.Servers||[];for(const s of ss)if(s&&s.AccessToken)return s.AccessToken;}catch{}return null;};
-const api=async path=>{const t=token();if(!t)throw new Error('no token');const r=await fetch(location.origin+path,{headers:{'X-Emby-Token':t}});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();};
+const client=()=>{const c=window.ApiClient;return c&&typeof c.getJSON==='function'&&typeof c.getUrl==='function'&&typeof c.accessToken==='function'&&c.accessToken()?c:null;};
+const api=async path=>{const c=client();if(!c)throw new Error('ApiClient not ready');return c.getJSON(c.getUrl(path));};
+const failedAt={};
+const retryBlocked=id=>!!failedAt[id]&&(Date.now()-failedAt[id])<CFG.retryMs;
 const itemIdFromUrl=()=>{const u=new URL(location.href);return u.searchParams.get('id')||(((u.hash||'').match(/[?&]id=([^&]+)/)||[])[1]?decodeURIComponent(((u.hash||'').match(/[?&]id=([^&]+)/)||[])[1]):null);};
 const serverIdFromUrl=()=>{const u=new URL(location.href);return u.searchParams.get('serverId')||(((u.hash||'').match(/[?&]serverId=([^&]+)/)||[])[1]?decodeURIComponent(((u.hash||'').match(/[?&]serverId=([^&]+)/)||[])[1]):'');};
 const detailsHash=(id,sid)=>'/details?id='+encodeURIComponent(id)+'&serverId='+encodeURIComponent(sid);
@@ -29,16 +32,19 @@ const best=els=>{let b=null,a=0;for(const el of els){if(!visible(el))continue;co
 const isDetails=()=>{const h=String(location.hash||'');return h.includes('/details')&&(h.includes('id=')||new URL(location.href).searchParams.get('id'));};
 const imdbFromItem=item=>{const ids=item&&item.ProviderIds||{};for(const k of Object.keys(ids))if(String(k).toLowerCase()==='imdb')return normId(ids[k]);return '';};
 
-async function fetchItem(id){const k='ieg_item_'+id,c=cacheGet(k);if(c)return c;const v=await api('/Items/'+encodeURIComponent(id)+'?Fields=ProviderIds');cacheSet(k,v);return v;}
+const inflight={};
+function fetchItem(id){const k='ieg_item_'+id,c=cacheGet(k);if(c)return Promise.resolve(c);if(inflight[k])return inflight[k];inflight[k]=api('Items/'+encodeURIComponent(id)+'?Fields=ProviderIds').then(v=>{cacheSet(k,v);return v;}).finally(()=>{delete inflight[k];});return inflight[k];}
 
 async function fetchDataset(imdbId){
   const k='ieg_ds_'+imdbId,c=cacheGet(k);if(c!==null)return c;
   const r=await fetch(CFG.datasetBase+'/'+encodeURIComponent(imdbId)+'.json',{credentials:'omit'});
   if(r.status===404){cacheSet(k,null);return null;}
   if(!r.ok)throw new Error('dataset '+r.status);
-  const show=await r.json(),seasons=show&&show.seasons;
-  if(!seasons||typeof seasons!=='object'){cacheSet(k,null);return null;}
-  const nums=Object.keys(seasons).map(Number).filter(n=>n>0);
+  const show=await r.json();
+  if(!show||typeof show!=='object'||Array.isArray(show)){cacheSet(k,null);return null;}
+  const seasons=show.seasons;
+  if(!seasons||typeof seasons!=='object'||Array.isArray(seasons)){cacheSet(k,null);return null;}
+  const nums=Object.keys(seasons).map(Number).filter(n=>Number.isInteger(n)&&n>0&&n<=CFG.maxSeasons);
   if(!nums.length){cacheSet(k,null);return null;}
   const max=Math.max(...nums),out=[];
   for(let s=1;s<=max;s++){
@@ -50,24 +56,26 @@ async function fetchDataset(imdbId){
 
 async function fetchJf(seriesId){
   const k='ieg_jf_'+seriesId,c=cacheGet(k);if(c)return c;
+  let epsFailed=false,ssFailed=false;
   const [epsRes,ssRes]=await Promise.all([
-    api('/Shows/'+encodeURIComponent(seriesId)+'/Episodes?Fields=ProviderIds,CommunityRating,IndexNumberEnd,ParentIndexNumber,IndexNumber,Name,PremiereDate&EnableImages=false&EnableUserData=false&Limit=20000').catch(()=>({Items:[]})),
-    api('/Shows/'+encodeURIComponent(seriesId)+'/Seasons?Fields=IndexNumber&EnableImages=false&EnableUserData=false').catch(()=>({Items:[]}))
+    api('Shows/'+encodeURIComponent(seriesId)+'/Episodes?Fields=ProviderIds,CommunityRating,IndexNumberEnd,ParentIndexNumber,IndexNumber,Name,PremiereDate&EnableImages=false&EnableUserData=false&Limit=20000').catch(()=>{epsFailed=true;return{Items:[]};}),
+    api('Shows/'+encodeURIComponent(seriesId)+'/Seasons?Fields=IndexNumber&EnableImages=false&EnableUserData=false').catch(()=>{ssFailed=true;return{Items:[]};})
   ]);
+  if(epsFailed)throw new Error('episodes request failed');
   const seasonsByNum={},seasonIds={};
   for(const s of (ssRes.Items||[])){const n=Number(s&&s.IndexNumber);if(Number.isFinite(n)&&n>0)seasonIds[n]=s.Id||'';}
   for(const ep of (epsRes.Items||[])){
     const sn=Number(ep&&ep.ParentIndexNumber),en=Number(ep&&ep.IndexNumber);
     if(!Number.isFinite(sn)||!Number.isFinite(en)||sn<1||en<1)continue;
-    const end=typeof ep.IndexNumberEnd==='number'&&ep.IndexNumberEnd>=en?ep.IndexNumberEnd:en;
+    const end=typeof ep.IndexNumberEnd==='number'&&Number.isFinite(ep.IndexNumberEnd)&&ep.IndexNumberEnd>=en?Math.min(ep.IndexNumberEnd,en+CFG.maxEpisodeSpan):en;
     if(!seasonsByNum[sn])seasonsByNum[sn]=[];
     seasonsByNum[sn].push({ep:en,epEnd:end,jfId:ep.Id||'',name:ep.Name||'',airDate:ep.PremiereDate||'',imdbEpId:normId((ep.ProviderIds&&(ep.ProviderIds.Imdb||ep.ProviderIds.imdb))||''),rating:toRating(ep&&ep.CommunityRating)});
   }
-  const val={seasonsByNum,seasonIds};cacheSet(k,val);return val;
+  const val={seasonsByNum,seasonIds};if(!ssFailed)cacheSet(k,val);return val;
 }
 
 function mergeData(ds,jf){
-  const nums=[0,...Object.keys(jf.seasonsByNum||{}).map(Number),...(ds?ds.map((_,i)=>i+1):[])],max=Math.max(...nums),out=[];
+  const nums=[0,...Object.keys(jf.seasonsByNum||{}).map(Number).filter(Number.isFinite),...(ds?ds.map((_,i)=>i+1):[])],max=Math.min(Math.max(...nums),CFG.maxSeasons),out=[];
   for(let s=1;s<=max;s++){
     const byEp={},jfList=(jf.seasonsByNum[s]||[]),dsList=((ds&&ds[s-1])||[]);
     for(const e of dsList)if(e&&Number.isFinite(e.episode)&&e.episode>0)byEp[e.episode]={ep:e.episode,exists:true,rating:toRating(e.rating),imdbEpId:e.id||'',jfId:'',name:'',airDate:'',combined:false};
@@ -149,11 +157,17 @@ function ensureHoverStyle(){
 function getTooltip(){let t=document.getElementById(HOVER_TOOLTIP_ID);if(!t){t=document.createElement('div');t.id=HOVER_TOOLTIP_ID;document.body.appendChild(t);}return t;}
 function hideTooltip(){clearTimeout(hoverTimer);hoverTimer=null;hoverCard=null;const t=document.getElementById(HOVER_TOOLTIP_ID);if(t)t.classList.remove('visible');}
 function positionTooltip(t){let x=hoverX+15,y=hoverY+15;if(x+340>window.innerWidth)x=hoverX-335;if(y+200>window.innerHeight)y=hoverY-180;t.style.left=x+'px';t.style.top=y+'px';}
-async function fetchHoverItem(id){if(typeof ApiClient==='undefined'||!id)return null;const uid=ApiClient.getCurrentUserId&&ApiClient.getCurrentUserId();if(!uid)return null;try{return await ApiClient.getJSON(ApiClient.getUrl('Users/'+uid+'/Items/'+id));}catch{return null;}}
+async function fetchHoverItem(id){if(!id)return null;const c=client(),uid=c&&typeof c.getCurrentUserId==='function'?c.getCurrentUserId():null;if(!uid)return null;try{return await api('Items/'+encodeURIComponent(id)+'?userId='+encodeURIComponent(uid));}catch{return null;}}
 function showTooltip(item){
   const t=getTooltip();
-  const meta=[item.ProductionYear||'',item.CommunityRating?('⭐ '+item.CommunityRating.toFixed(1)):'',item.Genres&&item.Genres.slice?item.Genres.slice(0,3).join(','):''].filter(Boolean).join('<span style="color:#666">|</span>');
-  t.innerHTML='<div class="jf-tooltip-title">'+(item.Name||'')+'</div><div class="jf-tooltip-meta">'+(meta||'')+'</div><div class="jf-tooltip-overview">'+(item.Overview||'No synopsis available.')+'</div>';
+  const parts=[item.ProductionYear||'',item.CommunityRating?('⭐ '+item.CommunityRating.toFixed(1)):'',item.Genres&&item.Genres.slice?item.Genres.slice(0,3).join(','):''].filter(Boolean);
+  const mk=(cls,txt)=>{const d=document.createElement('div');d.className=cls;d.textContent=txt;return d;};
+  const meta=document.createElement('div');meta.className='jf-tooltip-meta';
+  parts.forEach((p,i)=>{if(i){const sep=document.createElement('span');sep.style.color='#666';sep.textContent='|';meta.appendChild(sep);}meta.appendChild(document.createTextNode(p));});
+  t.textContent='';
+  t.appendChild(mk('jf-tooltip-title',item.Name||''));
+  t.appendChild(meta);
+  t.appendChild(mk('jf-tooltip-overview',item.Overview||'No synopsis available.'));
   positionTooltip(t);t.classList.add('visible');
 }
 function bindCellHover(el,jfId){
@@ -182,7 +196,7 @@ function bindAxisHover(el,scope,snum,epnum){
 }
 
 function bindInternalNav(root,sid){
-  root.addEventListener('click',e=>{const a=e.target.closest('a[data-jf-internal-id]');if(!a||!root.contains(a))return;if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;const id=a.dataset.jfInternalId||'';if(!id)return;e.preventDefault();e.stopPropagation();location.hash=detailsHash(id,sid);},true);
+  root.addEventListener('click',e=>{const off=e.target.closest&&e.target.closest('a[aria-disabled="true"]');if(off&&root.contains(off)){e.preventDefault();e.stopPropagation();return;}const a=e.target.closest('a[data-jf-internal-id]');if(!a||!root.contains(a))return;if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;const id=a.dataset.jfInternalId||'';if(!id)return;e.preventDefault();e.stopPropagation();location.hash=detailsHash(id,sid);},true);
 }
 
 function renderFallback(body,imdbId){
@@ -311,14 +325,15 @@ function ensureMounted(itemId,imdbId,sid,seriesName,target){
 async function run(){
   const seq=++runSeq;injectStyle();
   if(!isDetails()){burst.forEach(clearTimeout);burst=[];removeAll();hideTooltip();return;}
-  const itemId=itemIdFromUrl();if(!itemId)return;
-  let item;try{item=await fetchItem(itemId);}catch{return;}
+  const itemId=itemIdFromUrl();if(!itemId||retryBlocked(itemId))return;
+  let item;try{item=await fetchItem(itemId);}catch(e){if(client()){failedAt[itemId]=Date.now();console.warn('[JF-IEG] Item request failed',e);}return;}
   if(seq!==runSeq||!item)return;
   if(item.Type!=='Series'){removeAll();hideTooltip();return;}
   const imdbId=imdbFromItem(item);if(!imdbId){removeAll();hideTooltip();return;}
   const sid=serverIdFromUrl();if(!sid)return;
   const existing=currentBlock(itemId);
   if(existing&&existing.dataset.imdbId===imdbId&&existing.dataset.serverId===sid&&existing.isConnected&&visible(existing))return;
+  if(anchorItem!==itemId){anchorItem=itemId;anchorSince=Date.now();}
   const started=Date.now();let target=null;
   while(Date.now()-started<CFG.maxWaitMs){
     if(seq!==runSeq)return;
@@ -326,8 +341,8 @@ async function run(){
     target=findInsertTarget();
     const hasLink=findOfficialImdbLink(imdbId);
     if(target&&hasLink)break;
-    if(target&&Date.now()-started>=CFG.readyAnchorWaitMs)break;
-    await sleep(100);
+    if(target&&Date.now()-anchorSince>=CFG.readyAnchorWaitMs)break;
+    await sleep(CFG.pollMs);
   }
   if(seq!==runSeq||!target)return;
   ensureMounted(itemId,imdbId,sid,item.Name||'',target);
@@ -338,7 +353,9 @@ window.addEventListener('popstate',()=>{hideTooltip();scheduleRun(0);},true);
 document.addEventListener('viewshow',()=>{hideTooltip();scheduleRun(0);},true);
 document.addEventListener('viewbeforeshow',()=>{hideTooltip();scheduleRun(0);},true);
 
-if(document.body)new MutationObserver(()=>{if(!isDetails())return;const id=itemIdFromUrl()||'';if(!id)return;const b=currentBlock(id);if(!b||!b.isConnected||!visible(b))scheduleRun(CFG.reapplyDelayMs);}).observe(document.body,{childList:true,subtree:true});
+let watchPending=null;
+const watchCheck=()=>{watchPending=null;if(!isDetails())return;const id=itemIdFromUrl()||'';if(!id)return;const b=currentBlock(id);if(!b||!b.isConnected||!visible(b))scheduleRun(CFG.reapplyDelayMs);};
+if(document.body)new MutationObserver(()=>{if(watchPending)return;watchPending=setTimeout(watchCheck,CFG.observerIdleMs);}).observe(document.body,{childList:true,subtree:true});
 
 setInterval(()=>{if(!isDetails())return;const id=itemIdFromUrl()||'',b=id?currentBlock(id):null;if(id&&id!==lastItemId){lastItemId=id;scheduleBurst([0,350,900]);return;}if(id&&(!b||!b.isConnected||!visible(b)))scheduleRun(CFG.reapplyDelayMs);},CFG.watchDogMs);
 
