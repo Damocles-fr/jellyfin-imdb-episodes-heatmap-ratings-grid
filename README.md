@@ -75,7 +75,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ## Technical
 
 - It won't display on Jellyfin apps that do not use the Jellyfin Web UI & JavaScript Injector
-- Compatible with Jellyfin 10.11 and above. Not tested on Jellyfin 10.10 and under
+- Compatible with Jellyfin 10.11 & 12.0 and above. Not tested on Jellyfin 10.10 and under
 - Injects the graph directly into Jellyfin with the Jellyfin JavaScript Injector plugin
 - DOM insertion in a stable location on series page (between Seasons and cast)
 - Data source : The heatmap data is loaded from the IMDb heatmap dataset by @ya0903
