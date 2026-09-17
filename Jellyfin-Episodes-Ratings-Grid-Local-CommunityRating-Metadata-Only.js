@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const CFG={title:'Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v8',root:'[data-jf-ieg-root="1"]',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,pollMs:250,maxSeasons:500,maxEpisodeSpan:200,observerIdleMs:250,retryMs:5000,ttl:86400000};
+const CFG={title:'Episodes Grid',styleId:'jf-imdb-episodes-grid-style-v8',root:'[data-jf-ieg-root="1"]',watchDogMs:800,maxWaitMs:12000,readyAnchorWaitMs:2200,reapplyDelayMs:250,pollMs:250,maxSeasons:500,maxEpisodeSpan:200,observerIdleMs:250,retryMs:5000,ttl:7200000};
 const INV_KEY='jf-imdb-episodes-grid-inverted-v1';
 const HOVER_STYLE_ID='jf-hover-tooltip-style';
 const HOVER_TOOLTIP_ID='jf-hover-tooltip';
