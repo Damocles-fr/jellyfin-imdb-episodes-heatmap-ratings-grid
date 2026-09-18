@@ -31,7 +31,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 - [**Jellyfin JavaScript Injector plugin**](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector)
 
-## Screenshots
+## Screenshots (older version)
 
 ![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
 **Drop-down menu**
@@ -70,6 +70,8 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 #### 6. Done, refresh (F5 or Ctrl + Shift + R) a Jellyfin TV series page.
 
 ##### Alternatively, you can copy and paste the full script available on the GitHub rather than using cdn.jsdelivr. Note that this method does not support automatic updates. You can also install it only for your web-browser with an extension like *Violentmonkey*.
+
+##### Tip: With the local scripts, you can change the title for translation or anything else (in the first lines of the script).
 
 ## Technical
 
