@@ -71,7 +71,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ##### Alternatively, you can copy and paste the full script available on the GitHub rather than using cdn.jsdelivr. Note that this method does not support automatic updates. You can also install it only for your web-browser with an extension like *Violentmonkey*.
 
-##### Tip: With the local scripts, you can change the title for translation or anything else (in the first lines of the script).
+##### Tip: With the local scripts, you can change the title for translation or anything else (line 3 of the script).
 
 ## Technical
 
