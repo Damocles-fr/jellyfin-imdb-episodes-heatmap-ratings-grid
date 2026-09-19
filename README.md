@@ -34,7 +34,6 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ## Screenshots (older version)
 
 ![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
-**Drop-down menu**
 
 ## Installation
 
