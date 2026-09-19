@@ -36,13 +36,6 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
 **Drop-down menu**
 
-<br>
-
-![Many seasons scroll](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-2-manyseasonsscroll_resultat.webp)
-**Sticky column & Highlights**
-
-<br>
-
 ## Installation
 
 #### 1. Install the [**Jellyfin JavaScript Injector plugin**](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector) in your Jellyfin server if it is not already installed (need a server reboot).
