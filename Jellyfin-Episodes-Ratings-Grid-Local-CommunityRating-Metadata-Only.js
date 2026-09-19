@@ -128,11 +128,17 @@ ${CFG.root}{--c1:2.72rem;--c2:3.05rem;--rh:2.36rem;--axis:rgba(34,34,40,.84);--a
 
 function ensureHoverStyle(){
   if(document.getElementById(HOVER_STYLE_ID))return;
-  const s=document.createElement('style');s.id=HOVER_STYLE_ID;s.textContent='#'+HOVER_TOOLTIP_ID+'{position:fixed;z-index:99999;background:rgba(15,15,15,.95);color:#fff;padding:16px;border-radius:10px;width:320px;box-shadow:0 12px 40px rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(12px);pointer-events:none;opacity:0;transition:opacity .2s ease-in-out;display:none;font-family:sans-serif}#'+HOVER_TOOLTIP_ID+'.visible{opacity:1;display:block}.jf-tooltip-title{font-size:1.15em;font-weight:800;margin:0 0 6px;color:#fff;line-height:1.2}.jf-tooltip-meta{font-size:.8em;color:#10b981;margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}.jf-tooltip-overview{font-size:.85em;line-height:1.5;color:#d1d5db;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}';document.head.appendChild(s);
+  const s=document.createElement('style');s.id=HOVER_STYLE_ID;s.textContent='#'+HOVER_TOOLTIP_ID+'{position:fixed;z-index:99999;background:rgba(15,15,15,.95);color:#fff;padding:16px;border-radius:10px;box-sizing:border-box;width:min(320px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(12px);pointer-events:none;opacity:0;transition:opacity .2s ease-in-out;display:none;font-family:sans-serif}#'+HOVER_TOOLTIP_ID+'.visible{opacity:1;display:block}.jf-tooltip-title{font-size:1.15em;font-weight:800;margin:0 0 6px;color:#fff;line-height:1.2}.jf-tooltip-meta{font-size:.8em;color:#10b981;margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}.jf-tooltip-overview{font-size:.85em;line-height:1.5;color:#d1d5db;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}';document.head.appendChild(s);
 }
 function getTooltip(){let t=document.getElementById(HOVER_TOOLTIP_ID);if(!t){t=document.createElement('div');t.id=HOVER_TOOLTIP_ID;document.body.appendChild(t);}return t;}
 function hideTooltip(){clearTimeout(hoverTimer);hoverTimer=null;hoverCard=null;const t=document.getElementById(HOVER_TOOLTIP_ID);if(t)t.classList.remove('visible');}
-function positionTooltip(t){let x=hoverX+15,y=hoverY+15;if(x+340>window.innerWidth)x=hoverX-335;if(y+200>window.innerHeight)y=hoverY-180;t.style.left=x+'px';t.style.top=y+'px';}
+function positionTooltip(t){
+  const m=10,vw=window.innerWidth,vh=window.innerHeight,w=t.offsetWidth||320,h=t.offsetHeight||200;
+  let x=hoverX+15;if(x+w+m>vw)x=hoverX-15-w;
+  let y=hoverY+15;if(y+h+m>vh)y=hoverY-15-h;
+  t.style.left=Math.max(m,Math.min(x,vw-w-m))+'px';
+  t.style.top=Math.max(m,Math.min(y,vh-h-m))+'px';
+}
 async function fetchHoverItem(id){if(!id)return null;const c=client(),uid=c&&typeof c.getCurrentUserId==='function'?c.getCurrentUserId():null;if(!uid)return null;try{return await api('Items/'+encodeURIComponent(id)+'?userId='+encodeURIComponent(uid));}catch{return null;}}
 function showTooltip(item){
   const t=getTooltip();
@@ -144,7 +150,7 @@ function showTooltip(item){
   t.appendChild(mk('jf-tooltip-title',item.Name||''));
   t.appendChild(meta);
   t.appendChild(mk('jf-tooltip-overview',item.Overview||'No synopsis available.'));
-  positionTooltip(t);t.classList.add('visible');
+  t.classList.add('visible');positionTooltip(t);
 }
 function bindCellHover(el,jfId){
   if(!el||!jfId||el.dataset.jfHoverBound==='1')return;
@@ -335,6 +341,8 @@ window.addEventListener('hashchange',()=>{hideTooltip();scheduleRun(0);},true);
 window.addEventListener('popstate',()=>{hideTooltip();scheduleRun(0);},true);
 document.addEventListener('viewshow',()=>{hideTooltip();scheduleRun(0);},true);
 document.addEventListener('viewbeforeshow',()=>{hideTooltip();scheduleRun(0);},true);
+window.addEventListener('scroll',()=>{if(hoverCard)hideTooltip();},{capture:true,passive:true});
+document.addEventListener('touchstart',e=>{if(hoverCard&&!hoverCard.contains(e.target))hideTooltip();},{capture:true,passive:true});
 
 let watchPending=null;
 const watchCheck=()=>{watchPending=null;if(!isDetails())return;const id=itemIdFromUrl()||'';if(!id)return;const b=currentBlock(id);if(!b||!b.isConnected||!visible(b))scheduleRun(CFG.reapplyDelayMs);};
