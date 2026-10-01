@@ -4,7 +4,7 @@ Display the episodes ratings heatmap grid on Jellyfin TV Series pages.
 The userscript adds the grid to TV Shows pages between Seasons and Cast, inside a drop-down section that stays closed by default to avoid unnecessary loads and spoilers.
 
 <p align="center">
-  <img src="./assets/Jellyfin-Episodes-Ratings-Grid-1.4.webp" alt="Android view" width="520"><br>
+  <img src="./assets/episodes-ratings-grid.webp" alt="Android view" width="600"><br>
 </p>
 
 ## Features
@@ -30,10 +30,6 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 ## Requirements
 
 - [**Jellyfin JavaScript Injector plugin**](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector)
-
-## Screenshots (older version)
-
-![Dropdown menu demo](./assets/jellyfin-imdb-episodes-heatmap-ratings-grid-3-dropdownmenu.gif)
 
 ## Installation
 
