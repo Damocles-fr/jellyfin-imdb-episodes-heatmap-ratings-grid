@@ -19,7 +19,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap and grid data are **loaded only after clicking the drop-down menu**
 - Fetch IMDb ratings thanks to [@ya0903 dataset](https://github.com/ya0903/imdb-episode-dataset), fallback to Jellyfin CommunityRating metadata
-- **Alternative local script**: no online IMDb dataset.Faster. Only use *CommunityRating* metadata from the Jellyfin server. Perfect with plugins like *Jellyfin IMDb Ratings* or *MDBList Ratings*, which already update the JF server ratings with the IMDb ones.
+- **Alternative local script**: no online IMDb dataset. Faster. Only use *CommunityRating* metadata from the Jellyfin server. Perfect with plugins like *Jellyfin IMDb Ratings* or *MDBList Ratings*, which already update the JF server ratings with the IMDb ones.
 
 ## Transparency
 
