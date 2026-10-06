@@ -15,6 +15,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 - **HoverDetails**, [thanks @grimmdev](https://github.com/Jellyfin-PG/JellyFrame)
 - **Drop-down menu to avoid spoilers** at opening the TV series pages
 - **Custom themes** & backgrounds compatibility
+- Screenshot taken with ElegantFin theme + [elegantfin-jf12](https://github.com/mihaif7/elegantfin-jf12) for the JF12 Modern layout
 - **Highlights** the matching season number and episode number when hovering a cell
 - **Mobile-friendly** & Sticky episode number column during horizontal scrolling
 - Heatmap and grid data are **loaded only after clicking the drop-down menu**
