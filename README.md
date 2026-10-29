@@ -40,7 +40,6 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 #### 3. Go to: ***Dashboard*** => ***JS Injector***
 
 #### 4. ***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste :
-##### Auto-update :
 ```
 (() => {
   const s = document.createElement("script");
