@@ -40,6 +40,7 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 #### 3. Go to: ***Dashboard*** => ***JS Injector***
 
 #### 4. ***Add Script*** => Name it *imdb-grid* or whatever => Copy/Paste :
+##### Auto-update :
 ```
 (() => {
   const s = document.createElement("script");
@@ -51,7 +52,17 @@ The userscript adds the grid to TV Shows pages between Seasons and Cast, inside 
 
 ### **Or :**
 
-#### **Alternative Offline script** : use only JF server CommunityRating metadata. Faster. No IMDb online dataset, everything local, copy/paste this script instead : [Local-CommunityRating-Metadata-Only.js](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases/download/12.1.0/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js). This version is perfect with plugins like Jellyfin IMDb Ratings or MDBList Ratings, which already update the server ratings with the IMDb ones.
+#### **Alternative script** : Faster. No IMDb online dataset. Only use local JF server CommunityRating metadata. This version is perfect with plugins like *Jellyfin IMDb Ratings* or *MDBList Ratings*, which already update the server ratings with the IMDb ones.
+Copy/paste this script instead: [Local-CommunityRating-Metadata-Only.js](https://github.com/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid/releases/download/12.1.0/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js).
+###### Alternative script with Auto-update:
+```
+(() => {
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/gh/Damocles-fr/jellyfin-imdb-episodes-heatmap-ratings-grid@latest/Jellyfin-Episodes-Ratings-Grid-Local-CommunityRating-Metadata-Only.js";
+  s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
+```
 
 #### 5. Click ***Enabled*** => Click ***Save***
 
